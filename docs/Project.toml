@@ -1,0 +1,3 @@
+[deps]
+BumpStdlibs = "10e0400f-8273-43d0-bd6e-07483373ba4f"
+Documenter = "e30172f5-a6a5-5a46-863b-614d45cd2de4"
