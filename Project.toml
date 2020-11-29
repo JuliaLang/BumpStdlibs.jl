@@ -3,7 +3,13 @@ uuid = "10e0400f-8273-43d0-bd6e-07483373ba4f"
 authors = ["Dilum Aluthge", "contributors"]
 version = "1.0.0-DEV"
 
+[deps]
+GitHub = "bc5e4493-9b4d-5f90-b8aa-2b2bcaad7a26"
+HTTP = "cd3eb016-35fb-5094-929b-558a96fad6f3"
+
 [compat]
+GitHub = "5.2"
+HTTP = "0.9"
 julia = "1.5"
 
 [extras]
