@@ -1,6 +1,9 @@
 using BumpStdlibs
 using Test
 
+import Random
+
 @testset "BumpStdlibs.jl" begin
-    @test BumpStdlibs.f(1) == 2
+    include("unit-tests.jl")
+    include("integration-tests.jl")
 end
