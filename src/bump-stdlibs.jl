@@ -92,7 +92,7 @@ function _bump_single_stdlib(stdlib::StdlibInfo;
             run(`git checkout $(upstream_julia_repo_default_branch)`)
             assert_current_branch_is(upstream_julia_repo_default_branch)
             pr_title = "🤖 Bump the $(name) stdlib to $(stdlib_latest_commit_short)"
-            commit_message = "🤖 Bump the $(name) stdlib to $(stdlib_latest_commit)"
+            commit_message = "🤖 Bump the $(name) stdlib to $(stdlib_latest_commit_short)"
             pr_branch = "BumpStdlibs/$(name)-$(stdlib_latest_commit_short)$(pr_branch_suffix)"
             pr_body = string(
                 "```\n",
