@@ -95,8 +95,8 @@ function _bump_single_stdlib(stdlib::StdlibInfo;
             cd("FORK")
             run(`git checkout $(upstream_julia_repo_default_branch)`)
             assert_current_branch_is(upstream_julia_repo_default_branch)
-            pr_title = "[automated] Bump the $(name) stdlib to $(stdlib_latest_commit_short)$(pr_title_suffix)"
-            pr_title_long = "[automated] Bump the $(name) stdlib to $(stdlib_latest_commit)$(pr_title_suffix)"
+            pr_title = "🤖 Bump the $(name) stdlib to $(stdlib_latest_commit_short)$(pr_title_suffix)"
+            pr_title_long = "🤖 Bump the $(name) stdlib to $(stdlib_latest_commit)$(pr_title_suffix)"
             pr_branch = "BumpStdlibs/$(name)-$(stdlib_latest_commit_short)$(pr_branch_suffix)"
             pr_body = string(
                 "```\n",
