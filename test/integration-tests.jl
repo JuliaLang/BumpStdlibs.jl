@@ -4,12 +4,40 @@
     suffix = Random.randstring(16)
     pr_title_suffix = " $(suffix)"
     pr_branch_suffix = "-$(suffix)"
-    for i = 1:2
+
+    @testset "all stdlibs" begin 
+        stdlibs_to_include = "all"
         result = bump_stdlibs(
             julia_repo;
             auth = auth,
             pr_branch_suffix = pr_branch_suffix,
             pr_title_suffix = pr_title_suffix,
+            stdlibs_to_include = stdlibs_to_include,
+        )
+        @test result isa Nothing
+    end
+
+    @testset "only specified stdlibs" begin 
+        stdlibs_to_include = "Pkg"
+        result = bump_stdlibs(
+            julia_repo;
+            auth = auth,
+            pr_branch_suffix = pr_branch_suffix,
+            pr_title_suffix = pr_title_suffix,
+            stdlibs_to_include = stdlibs_to_include,
+        )
+        @test result isa Nothing
+    end
+
+    @testset "Override the default branch" begin 
+        julia_repo_default_branch = "master"
+        stdlibs_to_include = "Pkg"
+        result = bump_stdlibs(
+            julia_repo;
+            auth = auth,
+            pr_branch_suffix = pr_branch_suffix,
+            pr_title_suffix = pr_title_suffix,
+            stdlibs_to_include = stdlibs_to_include,
         )
         @test result isa Nothing
     end
