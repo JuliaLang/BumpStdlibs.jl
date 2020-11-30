@@ -40,7 +40,7 @@ function bump_stdlibs(julia_repo;
         @info "" i stdlib
     end
     filtered_stdlib_list = filter_stdlib_list(stdlib_list, stdlibs_to_include)
-    @info "Based on the input criteria \"$(stdlibs_to_include)\", we will try to update $(length(stdlib_list)) stdlibs"
+    @info "Based on the input criteria \"$(stdlibs_to_include)\", we will try to update $(length(filtered_stdlib_list)) stdlibs"
     for (i, stdlib) in enumerate(filtered_stdlib_list)
         @info "" i stdlib
     end
