@@ -1,0 +1,17 @@
+name: BumpStdlibs
+on:
+  workflow_dispatch:
+jobs:
+  BumpStdlibs:
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    steps:
+      - run: git config --global user.name "Dilum Aluthge"
+      - run: git config --global user.email "dilum@aluthge.com"
+      - run: julia --project 'using Pkg; Pkg.instantiate(); Pkg.precompile()'
+      - run: julia --project 'using BumpStdlibs; bump_stdlibs("bcbi-test/julia")'
+        with:
+        env:
+          JULIA_DEBUG: 'all'
+          BUMPSTDLIBS_STDLIBS_TO_INCLUDE: ${{ github.event.inputs.stdlibs_to_update }}
+          BUMPSTDLIBS_TOKEN: ${{ secrets.BUMPSTDLIBS_TOKEN }}
