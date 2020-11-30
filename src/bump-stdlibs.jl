@@ -97,7 +97,7 @@ function _bump_single_stdlib(stdlib::StdlibInfo;
             assert_current_branch_is(upstream_julia_repo_default_branch)
             pr_title = "[automated] Bump the $(name) stdlib to $(stdlib_latest_commit_short)$(pr_title_suffix)"
             pr_title_long = "[automated] Bump the $(name) stdlib to $(stdlib_latest_commit)$(pr_title_suffix)"
-            pr_branch = "bump_stdlibs/bump-$(name)-to-$(stdlib_latest_commit)$(pr_branch_suffix)"
+            pr_branch = "BumpStdlibs/$(name)-$(stdlib_latest_commit_short)$(pr_branch_suffix)"
             pr_body = string(
                 "```\n",
                 "\$ git log --pretty=oneline --abbrev=commit $(stdlib_current_commit_in_upstream)^..$(stdlib_latest_commit)\n",
