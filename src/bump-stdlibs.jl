@@ -96,7 +96,7 @@ function _bump_single_stdlib(stdlib::StdlibInfo;
             run(`git checkout $(upstream_julia_repo_default_branch)`)
             assert_current_branch_is(upstream_julia_repo_default_branch)
             pr_title = "🤖 Bump the $(name) stdlib to $(stdlib_latest_commit_short)$(pr_title_suffix)"
-            pr_title_long = "🤖 Bump the $(name) stdlib to $(stdlib_latest_commit)$(pr_title_suffix)"
+            commit_message = "🤖 Bump the $(name) stdlib to $(stdlib_latest_commit)$(pr_title_suffix)"
             pr_branch = "BumpStdlibs/$(name)-$(stdlib_latest_commit_short)$(pr_branch_suffix)"
             pr_body = string(
                 "```\n",
@@ -121,7 +121,7 @@ function _bump_single_stdlib(stdlib::StdlibInfo;
             cd("FORK")
             run(`git add stdlib/$(name).version`)
             run(`bash -c "git add deps/checksums/$(name)-*"`)
-            run(`git commit -m "$(pr_title_long)"`)
+            run(`git commit -m "$(commit_message)"`)
             run(`git push -f origin $(pr_branch)`)
             whoami = GitHub.whoami(; auth = auth).login
             pr_head_with_fork_owner = "$(whoami):$(pr_branch)"
