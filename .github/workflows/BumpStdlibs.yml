@@ -1,5 +1,5 @@
 name: BumpStdlibs
-on: 
+on:
   workflow_dispatch:
     inputs:
       BUMPSTDLIBS_STDLIBS_TO_INCLUDE:
