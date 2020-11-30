@@ -3,7 +3,7 @@ on:
   workflow_dispatch:
     inputs:
       BUMPSTDLIBS_STDLIBS_TO_INCLUDE:
-        description: 'Comma-separated list of stdlibs to include, or "all" for all.'
+        description: 'Comma-separated list of stdlibs to include, or "all" for all:'
         required: false
         default: 'all'
 jobs:
@@ -14,8 +14,8 @@ jobs:
       - run: echo "BUMPSTDLIBS_STDLIBS_TO_INCLUDE is ${{ github.event.inputs.BUMPSTDLIBS_STDLIBS_TO_INCLUDE }}"
       - run: git config --global user.name "Dilum Aluthge"
       - run: git config --global user.email "dilum@aluthge.com"
-      - run: julia --project 'using Pkg; Pkg.instantiate(); Pkg.precompile()'
-      - run: julia --project 'using BumpStdlibs; bump_stdlibs("bcbi-test/julia")'
+      - run: julia --color=yes --project -e 'using Pkg; Pkg.instantiate(); Pkg.precompile()'
+      - run: julia --color=yes --project -e 'using BumpStdlibs; bump_stdlibs("bcbi-test/julia")'
         env:
           JULIA_DEBUG: 'all'
           BUMPSTDLIBS_STDLIBS_TO_INCLUDE: ${{ github.event.inputs.BUMPSTDLIBS_STDLIBS_TO_INCLUDE }}
