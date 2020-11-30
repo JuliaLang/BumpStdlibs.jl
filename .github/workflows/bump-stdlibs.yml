@@ -20,3 +20,4 @@ jobs:
         env:
           BUMPSTDLIBS_STDLIBS_TO_INCLUDE: ${{ github.event.inputs.BUMPSTDLIBS_STDLIBS_TO_INCLUDE }}
           BUMPSTDLIBS_TOKEN: ${{ secrets.BUMPSTDLIBS_TOKEN }}
+          JULIA_DEBUG: 'all'
