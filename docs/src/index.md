@@ -4,9 +4,7 @@ CurrentModule = BumpStdlibs
 
 # BumpStdlibs
 
-```@index
-```
+If you are a member of the `JuliaPackaging` organization, and you want to run
+the BumpStdlibs action now, see the [Usage](@ref) page.
 
-```@autodocs
-Modules = [BumpStdlibs]
-```
+The source code for this package is available in the [GitHub repository](https://github.com/JuliaPackaging/BumpStdlibs.jl).
