@@ -11,6 +11,7 @@ jobs:
     if: github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v2
       - run: echo "BUMPSTDLIBS_STDLIBS_TO_INCLUDE is ${{ github.event.inputs.BUMPSTDLIBS_STDLIBS_TO_INCLUDE }}"
       - run: git config --global user.name "Dilum Aluthge"
       - run: git config --global user.email "dilum@aluthge.com"
