@@ -1,15 +1,13 @@
 """
     bump_stdlibs(julia_repo;
-                auth = get_auth_from_environment(),
-                julia_repo_default_branch::Union{AbstractString, Nothing} = nothing,
-                pr_title_suffix::AbstractString = "",
-                pr_branch_suffix::AbstractString = "",
-                stdlibs_to_include::Union{AbstractString, AbstractVector{<:AbstractString}} = get_stdlibs_to_include_from_environment())
+                 auth = get_auth_from_environment(),
+                 julia_repo_default_branch::Union{AbstractString, Nothing} = nothing,
+                 pr_branch_suffix::AbstractString = "",
+                 stdlibs_to_include::Union{AbstractString, AbstractVector{<:AbstractString}} = get_stdlibs_to_include_from_environment())
 """
 function bump_stdlibs(julia_repo;
                       auth = get_auth_from_environment(),
                       julia_repo_default_branch::Union{AbstractString, Nothing} = nothing,
-                      pr_title_suffix::AbstractString = "",
                       pr_branch_suffix::AbstractString = "",
                       stdlibs_to_include::Union{AbstractString, AbstractVector{<:AbstractString}} = get_stdlibs_to_include_from_environment())
     repo_regex = r"^([\w\-\_]*?)\/([\w]*?)$"
@@ -50,7 +48,6 @@ function bump_stdlibs(julia_repo;
             stdlib;
             auth,
             fork_julia_repo_gh,
-            pr_title_suffix,
             pr_branch_suffix,
             upstream_julia_repo_default_branch,
             upstream_julia_repo_gh,
@@ -63,7 +60,6 @@ end
 function _bump_single_stdlib(stdlib::StdlibInfo;
                              auth,
                              fork_julia_repo_gh,
-                             pr_title_suffix,
                              pr_branch_suffix,
                              upstream_julia_repo_default_branch,
                              upstream_julia_repo_gh)
@@ -95,8 +91,8 @@ function _bump_single_stdlib(stdlib::StdlibInfo;
             cd("FORK")
             run(`git checkout $(upstream_julia_repo_default_branch)`)
             assert_current_branch_is(upstream_julia_repo_default_branch)
-            pr_title = "🤖 Bump the $(name) stdlib to $(stdlib_latest_commit_short)$(pr_title_suffix)"
-            commit_message = "🤖 Bump the $(name) stdlib to $(stdlib_latest_commit)$(pr_title_suffix)"
+            pr_title = "🤖 Bump the $(name) stdlib to $(stdlib_latest_commit_short)"
+            commit_message = "🤖 Bump the $(name) stdlib to $(stdlib_latest_commit)"
             pr_branch = "BumpStdlibs/$(name)-$(stdlib_latest_commit_short)$(pr_branch_suffix)"
             pr_body = string(
                 "```\n",
