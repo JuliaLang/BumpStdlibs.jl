@@ -58,3 +58,7 @@ function delete_branches_with_prefix_on_origin_older_than(prefix::AbstractString
     end
     return nothing
 end
+
+function git_diff_is_empty(x::AbstractString, y::AbstractString)
+    return isempty(strip(read(`git diff $(x) $(y)`, String)))
+end
