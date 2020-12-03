@@ -86,7 +86,8 @@ function _bump_single_stdlib(stdlib::StdlibInfo;
             cd(temp_dir)
             cd("STDLIB")
             run(`git fetch --all --prune`)
-            changelog = read(`git log --pretty=oneline --abbrev=commit $(stdlib_current_commit_in_upstream)^..$(stdlib_latest_commit)`, String)
+            changelog_cmd = `git log --oneline $(stdlib_current_commit_in_upstream)^..$(stdlib_latest_commit)`
+            changelog = read(changelog_cmd, String)
             cd(temp_dir)
             cd("FORK")
             run(`git checkout $(upstream_julia_repo_default_branch)`)
@@ -98,7 +99,7 @@ function _bump_single_stdlib(stdlib::StdlibInfo;
                 "This pull request bumps Pkg to `$(stdlib_latest_commit_short)`, which is currently the latest commit on the `$(stdlib.branch)` branch.\n",
                 "\n",
                 "```\n",
-                "\$ git log --pretty=oneline --abbrev=commit $(stdlib_current_commit_in_upstream)^..$(stdlib_latest_commit)\n",
+                "\$ $(string(changelog_cmd))\n",
                 "$(strip(changelog))\n",
                 "```\n",
             )
