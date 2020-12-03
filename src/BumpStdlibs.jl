@@ -1,7 +1,9 @@
 module BumpStdlibs
 
+import Dates
 import GitHub
 import HTTP
+import TimeZones
 import URIs
 
 export StdlibInfo

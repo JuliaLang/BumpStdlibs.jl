@@ -1,19 +1,44 @@
-function get_auth_from_environment(environment_variable_name::AbstractString = "BUMPSTDLIBS_TOKEN")
-    if haskey(ENV, environment_variable_name)
-        token = strip(ENV[environment_variable_name])
-        if isempty(token)
-            throw(ArgumentError("The `$(environment_variable_name)` environment variable is defined but empty."))
-        else
-            @debug("Got token from `$(environment_variable_name)` environment variable. Attempting to authenticate...")
-            auth = GitHub.authenticate(token)
-            @debug("Successfully authenticated.")
-            return auth
-        end
-    else
-        throw(ArgumentError("The `$(environment_variable_name)` environment variable is not defined."))
-    end
+const INPUTS = Dict{Symbol, Any}(
+    :auth                    => ("BUMPSTDLIBS_TOKEN",                   nothing),
+    :close_old_pull_requests => ("BUMPSTDLIBS_CLOSE_OLD_PULL_REQUESTS", "true"),
+    :stdlibs_to_include      => ("BUMPSTDLIBS_STDLIBS_TO_INCLUDE",      "all"),
+)
+
+function post_process_input(::Val{:auth}, value)
+    return GitHub.authenticate(value)
 end
 
-function get_stdlibs_to_include_from_environment(environment_variable_name::AbstractString = "BUMPSTDLIBS_STDLIBS_TO_INCLUDE")::String
-    return get(ENV,environment_variable_name, "all")
+function post_process_input(::Val{:close_old_pull_requests}, value)
+    return parse(Bool, value)
+end
+
+function post_process_input(::Val, value)
+    return value
+end
+
+function get_input_from_environment(input::Symbol,
+                                    env_var_name::Union{AbstractString, Nothing} = nothing)
+    if haskey(INPUTS, input)
+        default_env_var_name, default_value = INPUTS[input]
+        if env_var_name isa Nothing
+            _env_var_name = default_env_var_name
+        else
+            _env_var_name = env_var_name
+        end
+        if haskey(ENV, _env_var_name)
+            environment_variable_contents = strip(ENV[_env_var_name])
+            if isempty(environment_variable_contents)
+                throw(ArgumentError("The `$(_env_var_name)` environment variable is defined but empty."))
+            else
+                return post_process_input(Val(input), environment_variable_contents)
+            end
+        else
+            if default_value isa Nothing
+                throw(ArgumentError("The `$(_env_var_name)` environment variable is not defined."))
+            else
+                return post_process_input(Val(input), default_value)
+            end
+        end
+    end
+    throw(ArgumentError("$(input) is not a valid input"))
 end

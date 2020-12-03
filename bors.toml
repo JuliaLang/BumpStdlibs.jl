@@ -1,0 +1,5 @@
+delete_merged_branches = true
+status = [
+    "Julia 1 - ubuntu-latest - x64 - pull_request ",
+]
+timeout_sec = 3600
