@@ -160,7 +160,18 @@ function _bump_single_stdlib(stdlib::StdlibInfo, config::Config, state::State)
             run(`git add stdlib/$(name).version`)
             run(`bash -c "git add deps/checksums/$(name)-*"`)
             run(`git commit -m "$(commit_message)"`)
-            run(`git push -f origin $(pr_branch)`)
+            do_push = true
+            if !(config.push_if_no_changes)
+                if pr_branch in get_origin_branches()
+                    if git_diff_is_empty("HEAD", "origin/$(pr_branch)")
+                        do_push = false
+                    end
+                end
+            end
+            @info "" do_push
+            if do_push
+                run(`git push --force origin $(pr_branch)`)
+            end
             whoami = GitHub.whoami(; auth = config.auth).login
             pr_head_with_fork_owner = "$(whoami):$(pr_branch)"
             pr_state = Dict{String, Any}(
