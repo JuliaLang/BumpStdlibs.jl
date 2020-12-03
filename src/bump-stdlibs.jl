@@ -113,7 +113,7 @@ function _bump_single_stdlib(stdlib::StdlibInfo, config::Config, state::State)
             cd(temp_dir)
             cd("STDLIB")
             run(`git fetch --all --prune`)
-            changelog_cmd = `git log --oneline $(stdlib_current_commit_in_upstream_short)^..$(stdlib_latest_commit_short)`
+            changelog_cmd = `git log --oneline $(stdlib_current_commit_in_upstream_short)..$(stdlib_latest_commit_short)`
             changelog = read(changelog_cmd, String)
             cd(temp_dir)
             cd("FORK")
@@ -137,7 +137,7 @@ function _bump_single_stdlib(stdlib::StdlibInfo, config::Config, state::State)
                 "New commit: $(stdlib_latest_commit_short)",
                 "",
                 "```",
-                strip(string(changelog_cmd), '`'),
+                "\$ $(strip(string(changelog_cmd), '`'))",
                 changelog,
                 "```",
             ]
