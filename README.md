@@ -2,7 +2,7 @@
 
 [![Stable](https://img.shields.io/badge/docs-stable-blue.svg)](https://JuliaPackaging.github.io/BumpStdlibs.jl/stable)
 [![Dev](https://img.shields.io/badge/docs-dev-blue.svg)](https://JuliaPackaging.github.io/BumpStdlibs.jl/dev)
-[![Build Status](https://github.com/JuliaPackaging/BumpStdlibs.jl/workflows/CI/badge.svg)](https://github.com/JuliaPackaging/BumpStdlibs.jl/actions)
+[![Build Status](https://github.com/JuliaPackaging/BumpStdlibs.jl/workflows/CI/badge.svg)](https://github.com/JuliaPackaging/BumpStdlibs.jl/actions?query=workflow%3ACI)
 [![Coverage](https://codecov.io/gh/JuliaPackaging/BumpStdlibs.jl/branch/master/graph/badge.svg)](https://codecov.io/gh/JuliaPackaging/BumpStdlibs.jl)
 
 Update the hashes and checksums of all Julia stdlibs in just four clicks.
