@@ -137,7 +137,7 @@ function _bump_single_stdlib(stdlib::StdlibInfo, config::Config, state::State)
                 "New commit: $(stdlib_latest_commit_short)",
                 "",
                 "```",
-                strip(string(changelog_cmd), '`'),
+                "\$ $(strip(string(changelog_cmd), '`'))",
                 changelog,
                 "```",
             ]
