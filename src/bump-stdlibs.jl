@@ -77,8 +77,11 @@ function _bump_single_stdlib(stdlib::StdlibInfo;
         run(`git checkout $(stdlib.branch)`)
         assert_current_branch_is(stdlib.branch)
         stdlib_latest_commit = strip(read(`git rev-parse HEAD`, String))
-        stdlib_latest_commit_short = strip(read(`git rev-parse --short HEAD`, String))
+        stdlib_latest_commit_short = strip(read(`git rev-parse --short $(stdlib_latest_commit)`, String))
+        assert_string_startswith(stdlib_latest_commit, stdlib_latest_commit_short)
         stdlib_current_commit_in_upstream = stdlib.current_shas["sha1"]
+        stdlib_current_commit_in_upstream_short = strip(read(`git rev-parse --short $(stdlib_current_commit_in_upstream)`, String))
+        assert_string_startswith(stdlib_current_commit_in_upstream, stdlib_current_commit_in_upstream_short)
         if stdlib_latest_commit == stdlib_current_commit_in_upstream
             @info "stdlib is already up to date" stdlib stdlib_latest_commit stdlib_current_commit_in_upstream
         else
@@ -86,7 +89,7 @@ function _bump_single_stdlib(stdlib::StdlibInfo;
             cd(temp_dir)
             cd("STDLIB")
             run(`git fetch --all --prune`)
-            changelog_cmd = `git log --oneline $(stdlib_current_commit_in_upstream)^..$(stdlib_latest_commit)`
+            changelog_cmd = `git log --oneline $(stdlib_current_commit_in_upstream_short)^..$(stdlib_latest_commit_short)`
             changelog = read(changelog_cmd, String)
             cd(temp_dir)
             cd("FORK")
