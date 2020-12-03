@@ -99,7 +99,7 @@ function _bump_single_stdlib(stdlib::StdlibInfo;
                 "This pull request bumps Pkg to `$(stdlib_latest_commit_short)`, which is currently the latest commit on the `$(stdlib.branch)` branch.\n",
                 "\n",
                 "```\n",
-                "\$ $(string(changelog_cmd))\n",
+                "\$ $(strip(string(changelog_cmd), '`'))\n",
                 "$(strip(changelog))\n",
                 "```\n",
             )
