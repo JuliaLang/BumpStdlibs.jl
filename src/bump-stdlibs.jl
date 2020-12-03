@@ -95,6 +95,8 @@ function _bump_single_stdlib(stdlib::StdlibInfo;
             commit_message = "🤖 Bump the $(name) stdlib to $(stdlib_latest_commit_short)"
             pr_branch = "BumpStdlibs/$(name)-$(stdlib_latest_commit_short)$(pr_branch_suffix)"
             pr_body = string(
+                "This pull request bumps Pkg to `$(stdlib_latest_commit_short)`, which is currently the latest commit on the `$(stdlib.branch)` branch.\n",
+                "\n",
                 "```\n",
                 "\$ git log --pretty=oneline --abbrev=commit $(stdlib_current_commit_in_upstream)^..$(stdlib_latest_commit)\n",
                 "$(strip(changelog))\n",
