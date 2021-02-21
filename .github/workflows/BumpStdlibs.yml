@@ -3,7 +3,7 @@ on:
   workflow_dispatch:
     inputs:
       BUMPSTDLIBS_STDLIBS_TO_INCLUDE:
-        description: 'Comma-separated list of stdlibs to include, or "all" for all:'
+        description: 'Comma-separated list of stdlibs to include like "Pkg,Downloads", or "all" for all:'
         required: false
         default: 'all'
       BUMPSTDLIBS_CLOSE_OLD_PULL_REQUESTS:
