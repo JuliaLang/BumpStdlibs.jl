@@ -135,6 +135,7 @@ function _bump_single_stdlib(stdlib::StdlibInfo, config::Config, state::State)
                 "Branch: $(stdlib.branch)",
                 "Old commit: $(stdlib_current_commit_in_upstream_short)",
                 "New commit: $(stdlib_latest_commit_short)",
+                "Bump invoked by: @$(get(ENV, "BUMPSTDLIBS_SENDER", ""))",
                 "",
                 "```",
                 "\$ $(strip(string(changelog_cmd), '`'))",
