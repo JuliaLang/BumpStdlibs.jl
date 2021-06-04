@@ -4,7 +4,7 @@ CurrentModule = BumpStdlibs
 
 # Usage
 
-If you are a member of the `JuliaLang` organization, and you want to run
+If you are a `JuliaLang` committer, and you want to run
 the BumpStdlibs action now, here are the steps:
 1. Go to [this URL](https://github.com/JuliaLang/BumpStdlibs.jl/actions/workflows/BumpStdlibs.yml).
 2. In the section that says "This workflow has a `workflow_dispatch` event trigger", click on the `Run workflow` button.
