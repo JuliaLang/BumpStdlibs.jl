@@ -154,13 +154,11 @@ function _bump_single_stdlib(stdlib::StdlibInfo, config::Config, state::State)
                             println(io, new_version_contents)
                         end
                         assert_file_contains(version_filename, stdlib_latest_commit)
-                        run(`bash -c "rm -rf deps/checksums/$(name)-*"`)
-                        run(`bash -c "sed -i -e 's/^$(name)-.*$//' deps/checksums/*/*"`)
-                        cd("stdlib") do
-                            run(`make`)
-                        end
+                        rm(joinpath("deps", "checksums"); force = true, recursive = true)
+                        run(`make julia-deps`)
+                        run(`make julia-stdlib`)
+                        run(`make -f contrib/refresh_checksums.mk`)
                         run(`git add -A`)
-                        run(`bash -c "git add deps/checksums/$(name)-*"`)
                         run(`git commit -m "$(commit_message)"`)
                         do_push = true
                         if !(config.push_if_no_changes)
