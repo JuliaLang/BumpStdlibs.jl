@@ -160,15 +160,22 @@ function _bump_single_stdlib(stdlib::StdlibInfo, config::Config, state::State)
                                 startswith(strip(file), "$(name)-") && ispath(full_path) && rm(full_path; force = true, recursive = true)
                             end
                         end
+                        directories_to_delete = String[]
                         for (root, dirs, files) in walkdir(joinpath(pwd(), "deps", "checksums"))
                             for dir in dirs
                                 full_path = joinpath(root, dir)
                                 if startswith(strip(dir), "$(name)-")
                                     @debug "" root dir full_path
-                                    if ispath(full_path)
-                                        rm(full_path; force = true, recursive = true)
+                                    if isdir(full_path)
+                                        push!(directories_to_delete, full_path)
                                     end
                                 end
+                            end
+                        end
+                        for full_path in directories_to_delete
+                            @debug "" root dir full_path
+                            if isdir(full_path)
+                                rm(full_path; force = true, recursive = true)
                             end
                         end
                         checksum_files_that_need_refreshing = String[]
