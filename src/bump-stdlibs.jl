@@ -163,7 +163,12 @@ function _bump_single_stdlib(stdlib::StdlibInfo, config::Config, state::State)
                         for (root, dirs, files) in walkdir(joinpath(pwd(), "deps", "checksums"))
                             for dir in dirs
                                 full_path = joinpath(root, dir)
-                                startswith(strip(dir), "$(name)-") && ispath(full_path) && rm(full_path; force = true, recursive = true)
+                                if startswith(strip(dir), "$(name)-")
+                                    @debug "" root dir full_path
+                                    if ispath(full_path)
+                                        rm(full_path; force = true, recursive = true)
+                                    end
+                                end
                             end
                         end
                         checksum_files_that_need_refreshing = String[]
