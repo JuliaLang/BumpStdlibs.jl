@@ -156,12 +156,12 @@ function _bump_single_stdlib(stdlib::StdlibInfo, config::Config, state::State)
                         assert_file_contains(version_filename, stdlib_latest_commit)
                         for (root, dirs, files) in walkdir(joinpath(pwd(), "deps", "checksums"))
                             for dir in dirs
-                                startswith(strip(dir), "$(name)-") && rm(full_path; force = true, recursive = true)
                                 full_path = joinpath(root, dir)
+                                startswith(strip(dir), "$(name)-") && rm(full_path; force = true, recursive = true)
                             end
                             for file in files
-                                startswith(strip(file), "$(name)-") && rm(full_path; force = true, recursive = true)
                                 full_path = joinpath(root, file)
+                                startswith(strip(file), "$(name)-") && rm(full_path; force = true, recursive = true)
                             end
                         end
                         checksum_files_that_need_refreshing = String[]
