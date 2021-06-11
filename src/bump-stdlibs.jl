@@ -173,7 +173,7 @@ function _bump_single_stdlib(stdlib::StdlibInfo, config::Config, state::State)
                             end
                         end
                         for full_path in directories_to_delete
-                            @debug "" root dir full_path
+                            @debug "" full_path
                             if isdir(full_path)
                                 rm(full_path; force = true, recursive = true)
                             end
