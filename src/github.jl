@@ -76,20 +76,21 @@ function create_or_get_fork(fork::AbstractString, upstream::GitHub.Repo; auth)
 end
 
 function update_fork_branch(fork::GitHub.Repo, upstream::GitHub.Repo, branch_name::AbstractString; auth)
-    with_temp_dir() do temp_dir
-        cd(temp_dir)
-        upstream_clone_url = "https://github.com/$(upstream.full_name).git"
-        token = auth.token
-        fork_clone_url = "https://x-access-token:$(token)@github.com/$(fork.full_name).git"
-        run(`git clone $(fork_clone_url) FORK`)
-        cd("FORK")
-        run(`git remote add upstream $(upstream_clone_url)`)
-        run(`git fetch --all --prune`)
-        run(`git checkout -B $(branch_name) upstream/$(branch_name)`)
-        run(`git pull upstream $(branch_name)`)
-        run(`git reset --hard upstream/$(branch_name)`)
-        run(`git push --force origin $(branch_name)`)
-        return nothing
-    end
+    mktempdir() do temp_dir
+        cd(temp_dir) do
+            upstream_clone_url = "https://github.com/$(upstream.full_name).git"
+            token = auth.token
+            fork_clone_url = "https://x-access-token:$(token)@github.com/$(fork.full_name).git"
+            run(`git clone $(fork_clone_url) FORK`)
+            cd("FORK") do
+                run(`git remote add upstream $(upstream_clone_url)`)
+                run(`git fetch --all --prune`)
+                run(`git checkout -B $(branch_name) upstream/$(branch_name)`)
+                run(`git pull upstream $(branch_name)`)
+                run(`git reset --hard upstream/$(branch_name)`)
+                run(`git push --force origin $(branch_name)`)
+            end # cd("FORK")
+        end # cd(temp_dir)
+    end # mktempdir()
     return nothing
 end

@@ -17,6 +17,7 @@ function bump_stdlibs(julia_repo::AbstractString, config::Config)
     upstream_julia_repo_owner = m[1]
     upstream_julia_repo_name = m[2]
     upstream_julia_repo = "$(upstream_julia_repo_owner)/$(upstream_julia_repo_name)"
+    @info "Attempting to get upstream `julia` repo" upstream_julia_repo
     upstream_julia_repo_gh = GitHub.repo(upstream_julia_repo; auth = config.auth)
     whoami = GitHub.whoami(; auth = config.auth).login
     @debug("My GitHub username is: $(whoami)")
@@ -58,21 +59,23 @@ function bump_stdlibs(julia_repo::AbstractString, config::Config)
         end
     end
     if config.close_old_pull_requests
-        with_temp_dir() do temp_dir
-            cd(temp_dir)
-            fork_clone_url = "https://x-access-token:$(config.auth.token)@github.com/$(state.fork_julia_repo_gh.full_name).git"
-            run(`git clone $(fork_clone_url) FORK`)
-            cd("FORK")
-            run(`git fetch --all --prune`)
-            for (i, stdlib) in enumerate(filtered_stdlib_list)
-                prefix = "BumpStdlibs/$(stdlib.name)-"
-                delete_branches_with_prefix_on_origin_older_than(
-                    prefix,
-                    config.close_old_pull_requests_older_than;
-                    exclude = state.all_pr_branches,
-                )
-            end
-        end
+        mktempdir() do temp_dir
+            cd(temp_dir) do
+                fork_clone_url = "https://x-access-token:$(config.auth.token)@github.com/$(state.fork_julia_repo_gh.full_name).git"
+                run(`git clone $(fork_clone_url) FORK`)
+                cd("FORK") do
+                    run(`git fetch --all --prune`)
+                    for (i, stdlib) in enumerate(filtered_stdlib_list)
+                        prefix = "BumpStdlibs/$(stdlib.name)-"
+                        delete_branches_with_prefix_on_origin_older_than(
+                            prefix,
+                            config.close_old_pull_requests_older_than;
+                            exclude = state.all_pr_branches,
+                        )
+                    end
+                end # cd("FORK")
+            end # cd(temp_dir)
+        end # end mktempdir()
     end
     if !isempty(errors)
         @error "Encountered at least one error" errors
@@ -87,107 +90,107 @@ function _bump_single_stdlib(stdlib::StdlibInfo, config::Config, state::State)
     fork_julia_repo_gh = state.fork_julia_repo_gh
     upstream_julia_repo_gh = state.upstream_julia_repo_gh
     upstream_julia_repo_default_branch = state.upstream_julia_repo_default_branch
-    with_temp_dir() do temp_dir
-        cd(temp_dir)
-        name = stdlib.name
-        token = auth.token
-        fork_clone_url = "https://x-access-token:$(token)@github.com/$(fork_julia_repo_gh.full_name).git"
-        run(`git clone $(fork_clone_url) FORK`)
-        cd("FORK")
-        cd(temp_dir)
-        stdlib_clone_url = stdlib.git_url
-        run(`git clone $(stdlib_clone_url) STDLIB`)
-        cd("STDLIB")
-        run(`git checkout $(stdlib.branch)`)
-        assert_current_branch_is(stdlib.branch)
-        stdlib_latest_commit = strip(read(`git rev-parse HEAD`, String))
-        stdlib_latest_commit_short = strip(read(`git rev-parse --short $(stdlib_latest_commit)`, String))
-        assert_string_startswith(stdlib_latest_commit, stdlib_latest_commit_short)
-        stdlib_current_commit_in_upstream = stdlib.current_shas["sha1"]
-        stdlib_current_commit_in_upstream_short = strip(read(`git rev-parse --short $(stdlib_current_commit_in_upstream)`, String))
-        assert_string_startswith(stdlib_current_commit_in_upstream, stdlib_current_commit_in_upstream_short)
-        if stdlib_latest_commit == stdlib_current_commit_in_upstream
-            @info "stdlib is already up to date" stdlib stdlib_latest_commit stdlib_current_commit_in_upstream
-        else
-            @info "stdlib is not up to date, so I will update it now" stdlib stdlib_latest_commit stdlib_current_commit_in_upstream
-            cd(temp_dir)
-            cd("STDLIB")
-            run(`git fetch --all --prune`)
-            changelog_cmd = `git log --oneline $(stdlib_current_commit_in_upstream_short)..$(stdlib_latest_commit_short)`
-            changelog = read(changelog_cmd, String)
-            cd(temp_dir)
-            cd("FORK")
-            run(`git checkout $(upstream_julia_repo_default_branch)`)
-            assert_current_branch_is(upstream_julia_repo_default_branch)
-            pr_title_without_emoji = "Bump the $(name) stdlib from $(stdlib_current_commit_in_upstream_short) to $(stdlib_latest_commit_short)"
-            pr_title = "🤖 $(pr_title_without_emoji)"
-            commit_message = "[automated] $(pr_title_without_emoji)"
-            pr_branch_suffix_stripped = strip(pr_branch_suffix)
-            if isempty(pr_branch_suffix_stripped)
-                pr_branch_suffix_with_hyphen = ""
-            else
-                pr_branch_suffix_with_hyphen = "-$(pr_branch_suffix_stripped)"
+    mktempdir() do temp_dir
+        cd(temp_dir) do
+            name = stdlib.name
+            token = auth.token
+            fork_clone_url = "https://x-access-token:$(token)@github.com/$(fork_julia_repo_gh.full_name).git"
+            run(`git clone $(fork_clone_url) FORK`)
+            cd("FORK") do # we do this just to double-check that the `FORK` directory was created
             end
-            pr_branch = "BumpStdlibs/$(name)-$(stdlib_latest_commit_short)$(pr_branch_suffix_with_hyphen)"
-            push!(state.all_pr_branches, pr_branch)
-            pr_body_lines = String[
-                "Stdlib: $(name)",
-                "Branch: $(stdlib.branch)",
-                "Old commit: $(stdlib_current_commit_in_upstream_short)",
-                "New commit: $(stdlib_latest_commit_short)",
-                "Bump invoked by: @$(get(ENV, "BUMPSTDLIBS_SENDER", ""))",
-                "",
-                "```",
-                "\$ $(strip(string(changelog_cmd), '`'))",
-                changelog,
-                "```",
-            ]
-            pr_body = strip(join(strip.(pr_body_lines), "\n"))
-            run(`git checkout -B $(pr_branch)`)
-            assert_current_branch_is(pr_branch)
-            version_filename = joinpath("stdlib", "$(name).version")
-            old_version_contents = strip(read(version_filename, String))
-            new_version_contents = replace(old_version_contents, stdlib_current_commit_in_upstream => stdlib_latest_commit)
-            rm(version_filename; force = true, recursive = true)
-            open(version_filename, "w") do io
-                println(io, new_version_contents)
-            end
-            assert_file_contains(version_filename, stdlib_latest_commit)
-            run(`bash -c "git rm -rf deps/checksums/$(name)-*"`)
-            cd("stdlib")
-            run(`make`)
-            cd(temp_dir)
-            cd("FORK")
-            run(`git add stdlib/$(name).version`)
-            run(`bash -c "git add deps/checksums/$(name)-*"`)
-            run(`git commit -m "$(commit_message)"`)
-            do_push = true
-            if !(config.push_if_no_changes)
-                if pr_branch in get_origin_branches()
-                    if git_diff_is_empty("HEAD", "origin/$(pr_branch)")
-                        do_push = false
-                    end
-                end
-            end
-            @info "" do_push
-            if do_push
-                run(`git push --force origin $(pr_branch)`)
-            end
-            whoami = GitHub.whoami(; auth = config.auth).login
-            pr_head_with_fork_owner = "$(whoami):$(pr_branch)"
-            pr_state = Dict{String, Any}(
-                "base" => upstream_julia_repo_default_branch,
-                "body" => strip(pr_body),
-                "head" => pr_head_with_fork_owner,
-                "maintainer_can_modify" => true,
-                "title" => pr_title,
-            )
-            @debug "" upstream_julia_repo_gh
-            @debug "" fork_julia_repo_gh
-            @debug "" pr_state
-            pr = create_or_update_pull_request(upstream_julia_repo_gh, pr_state; auth = config.auth)
-        end
-        return nothing
-    end
+            run(`git clone $(stdlib.git_url) STDLIB`)
+            cd("STDLIB") do
+                run(`git checkout $(stdlib.branch)`)
+                assert_current_branch_is(stdlib.branch)
+                stdlib_latest_commit = strip(read(`git rev-parse HEAD`, String))
+                stdlib_latest_commit_short = strip(read(`git rev-parse --short $(stdlib_latest_commit)`, String))
+                assert_string_startswith(stdlib_latest_commit, stdlib_latest_commit_short)
+                stdlib_current_commit_in_upstream = stdlib.current_shas["sha1"]
+                stdlib_current_commit_in_upstream_short = strip(read(`git rev-parse --short $(stdlib_current_commit_in_upstream)`, String))
+                assert_string_startswith(stdlib_current_commit_in_upstream, stdlib_current_commit_in_upstream_short)
+                run(`git fetch --all --prune`)
+                changelog_cmd = `git log --oneline $(stdlib_current_commit_in_upstream_short)..$(stdlib_latest_commit_short)`
+                changelog = read(changelog_cmd, String)
+                if stdlib_latest_commit == stdlib_current_commit_in_upstream
+                    @info "stdlib is already up to date" stdlib stdlib_latest_commit stdlib_current_commit_in_upstream
+                else
+                    @info "stdlib is not up to date, so I will update it now" stdlib stdlib_latest_commit stdlib_current_commit_in_upstream
+                    cd(joinpath(temp_dir, "FORK")) do
+                        run(`git checkout $(upstream_julia_repo_default_branch)`)
+                        assert_current_branch_is(upstream_julia_repo_default_branch)
+                        pr_title_without_emoji = "Bump the $(name) stdlib from $(stdlib_current_commit_in_upstream_short) to $(stdlib_latest_commit_short)"
+                        pr_title = "🤖 $(pr_title_without_emoji)"
+                        commit_message = pr_title
+                        pr_branch_suffix_stripped = strip(pr_branch_suffix)
+                        if isempty(pr_branch_suffix_stripped)
+                            pr_branch_suffix_with_hyphen = ""
+                        else
+                            pr_branch_suffix_with_hyphen = "-$(pr_branch_suffix_stripped)"
+                        end
+                        pr_branch = "BumpStdlibs/$(name)-$(stdlib_latest_commit_short)$(pr_branch_suffix_with_hyphen)"
+                        push!(state.all_pr_branches, pr_branch)
+                        bumpstdlibs_sender = strip(get(ENV, "BUMPSTDLIBS_SENDER", ""))
+                        bumpstdlibs_sender_ping = isempty(bumpstdlibs_sender) ? "unknown" : "@$(bumpstdlibs_sender)"
+                        pr_body_lines = String[
+                            "Stdlib: $(name)",
+                            "Branch: $(stdlib.branch)",
+                            "Old commit: $(stdlib_current_commit_in_upstream_short)",
+                            "New commit: $(stdlib_latest_commit_short)",
+                            "Bump invoked by: $(bumpstdlibs_sender_ping)",
+                            "",
+                            "```",
+                            "\$ $(strip(string(changelog_cmd), '`'))",
+                            changelog,
+                            "```",
+                        ]
+                        pr_body = strip(join(strip.(pr_body_lines), "\n"))
+                        run(`git checkout -B $(pr_branch)`)
+                        assert_current_branch_is(pr_branch)
+                        version_filename = joinpath("stdlib", "$(name).version")
+                        old_version_contents = strip(read(version_filename, String))
+                        new_version_contents = replace(old_version_contents, stdlib_current_commit_in_upstream => stdlib_latest_commit)
+                        rm(version_filename; force = true, recursive = true)
+                        open(version_filename, "w") do io
+                            println(io, new_version_contents)
+                        end
+                        assert_file_contains(version_filename, stdlib_latest_commit)
+                        run(`bash -c "rm -rf deps/checksums/$(name)-*"`)
+                        run(`bash -c "sed -i -e 's/^$(name)-.*$//' deps/checksums/*/*"`)
+                        cd("stdlib") do
+                            run(`make`)
+                        end
+                        run(`git add -A`)
+                        run(`bash -c "git add deps/checksums/$(name)-*"`)
+                        run(`git commit -m "$(commit_message)"`)
+                        do_push = true
+                        if !(config.push_if_no_changes)
+                            if pr_branch in get_origin_branches()
+                                if git_diff_is_empty("HEAD", "origin/$(pr_branch)")
+                                    do_push = false
+                                end
+                            end
+                        end
+                        @info "" do_push
+                        if do_push
+                            run(`git push --force origin $(pr_branch)`)
+                        end
+                        whoami = GitHub.whoami(; auth = config.auth).login
+                        pr_head_with_fork_owner = "$(whoami):$(pr_branch)"
+                        pr_state = Dict{String, Any}(
+                            "base" => upstream_julia_repo_default_branch,
+                            "body" => strip(pr_body),
+                            "head" => pr_head_with_fork_owner,
+                            "maintainer_can_modify" => true,
+                            "title" => pr_title,
+                        )
+                        @debug "" upstream_julia_repo_gh
+                        @debug "" fork_julia_repo_gh
+                        @debug "" pr_state
+                        pr = create_or_update_pull_request(upstream_julia_repo_gh, pr_state; auth = config.auth)
+                    end # cd(joinpath(temp_dir, "FORK"))
+                end # if
+            end # cd("STDLIB"
+        end # cd(temp_dir)
+    end # mktempdir()
     return nothing
 end
