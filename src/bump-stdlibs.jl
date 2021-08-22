@@ -194,8 +194,12 @@ function _bump_single_stdlib(stdlib::StdlibInfo, config::Config, state::State)
                         cd("stdlib") do
                             run(`make`)
                         end
+                        file_to_target = Dict(
+                            "suitesparse" => "libsuitesparse",
+                        )
                         for file in checksum_files_that_need_refreshing
-                            run(`make -f contrib/refresh_checksums.mk $(file)`)
+                            target = get(file_to_target, file, file)
+                            run(`make -f contrib/refresh_checksums.mk $(target)`)
                         end
                         run(`git add -A`)
                         run(`git commit -m "$(commit_message)"`)
