@@ -142,6 +142,8 @@ function _bump_single_stdlib(stdlib::StdlibInfo, config::Config, state::State)
                             "\$ $(strip(string(changelog_cmd), '`'))",
                             changelog,
                             "```",
+                            "",
+                            "Powered by [BumpStdlibs.jl](https://github.com/JuliaLang/BumpStdlibs.jl)",
                         ]
                         pr_body = strip(join(strip.(pr_body_lines), "\n"))
                         run(`git checkout -B $(pr_branch)`)
