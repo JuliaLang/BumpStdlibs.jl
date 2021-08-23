@@ -217,8 +217,11 @@ function _bump_single_stdlib(stdlib::StdlibInfo, config::Config, state::State)
                             run(`git push --force origin $(pr_branch)`)
                             @info "pushed"
                         end
+                        @info "trying to determine who i am..."
                         whoami = GitHub.whoami(; auth = config.auth).login
+                        @info "" whoami
                         pr_head_with_fork_owner = "$(whoami):$(pr_branch)"
+                        @info "" pr_head_with_fork_owner
                         pr_state = Dict{String, Any}(
                             "base" => upstream_julia_repo_default_branch,
                             "body" => strip(pr_body),
@@ -226,9 +229,8 @@ function _bump_single_stdlib(stdlib::StdlibInfo, config::Config, state::State)
                             "maintainer_can_modify" => true,
                             "title" => pr_title,
                         )
-                        @debug "" upstream_julia_repo_gh
-                        @debug "" fork_julia_repo_gh
-                        @debug "" pr_state
+                        @debug "" upstream_julia_repo_gh fork_julia_repo_gh pr_state
+                        @info " " upstream_julia_repo_gh fork_julia_repo_gh pr_state
                         @info "about to create or update PR"
                         pr = create_or_update_pull_request(upstream_julia_repo_gh, pr_state; auth = config.auth)
                         @info "created or updated PR"
