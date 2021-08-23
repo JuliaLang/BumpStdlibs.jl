@@ -213,7 +213,9 @@ function _bump_single_stdlib(stdlib::StdlibInfo, config::Config, state::State)
                         end
                         @info "" do_push
                         if do_push
+                            @info "about to push"
                             run(`git push --force origin $(pr_branch)`)
+                            @info "pushed"
                         end
                         whoami = GitHub.whoami(; auth = config.auth).login
                         pr_head_with_fork_owner = "$(whoami):$(pr_branch)"
@@ -227,7 +229,9 @@ function _bump_single_stdlib(stdlib::StdlibInfo, config::Config, state::State)
                         @debug "" upstream_julia_repo_gh
                         @debug "" fork_julia_repo_gh
                         @debug "" pr_state
+                        @info "about to create or update PR"
                         pr = create_or_update_pull_request(upstream_julia_repo_gh, pr_state; auth = config.auth)
+                        @info "created or updated PR"
                     end # cd(joinpath(temp_dir, "FORK"))
                 end # if
             end # cd("STDLIB"
