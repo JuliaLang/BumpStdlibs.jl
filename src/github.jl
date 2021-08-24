@@ -25,9 +25,29 @@ function is_pr_exists_exception(ex)
     return false
 end
 
+function _get_token_from_auth(auth::GitHub.OAuth2)
+    return auth.token
+end
+
+function whoami_username(; auth)
+    io = IOBuffer()
+    Downloads.download(
+        "https://api.github.com/user",
+        io;
+        headers = Dict(
+            "Authorization" => "token $(_get_token_from_auth(auth))",
+        ),
+    )
+    str = String(take!(io))
+    json = JSON3.read(str)
+    login = json.login::String
+    return login
+end
+
 function create_or_update_pull_request(repo::GitHub.Repo, params; auth)
-    whoami = GitHub.whoami(; auth = auth).login
+    whoami = whoami_username(; auth)
     try
+        @info "Attempting to create a new pull request..."
         new_pr = GitHub.create_pull_request(
             repo;
             params=params,
@@ -49,9 +69,11 @@ function create_or_update_pull_request(repo::GitHub.Repo, params; auth)
             )
             @debug "" found_prs
             if length(found_prs) != 1
-                @warn "length(found_prs) != 1" length(found_prs)
+                @warn "length(found_prs) != 1" length(found_prs) found_prs [x.number for x in found_prs]
             end
             found_pr = found_prs[1]
+            @info "There is already an existing pull request: $(found_pr.number)"
+            @info "Attempting to update the existing pull request..."
             existing_pr = GitHub.update_pull_request(
                 repo,
                 found_pr.number;
