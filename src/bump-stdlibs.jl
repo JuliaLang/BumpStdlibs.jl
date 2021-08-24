@@ -18,8 +18,8 @@ function bump_stdlibs(julia_repo::AbstractString, config::Config)
     upstream_julia_repo_name = m[2]
     upstream_julia_repo = "$(upstream_julia_repo_owner)/$(upstream_julia_repo_name)"
     @debug "Attempting to get upstream `julia` repo" upstream_julia_repo
-    upstream_julia_repo_gh = GitHub.repo(upstream_julia_repo; auth = config.auth)
-    whoami = GitHub.whoami(; auth = config.auth).login
+    upstream_julia_repo_gh = GitHub.repo(upstream_julia_repo; config.auth)
+    whoami = whoami_username(; config.auth)
     @debug("My GitHub username is: $(whoami)")
     fork_julia_repo_owner = whoami
     fork_julia_repo_name = upstream_julia_repo_name
@@ -194,8 +194,16 @@ function _bump_single_stdlib(stdlib::StdlibInfo, config::Config, state::State)
                         cd("stdlib") do
                             run(`make`)
                         end
+                        file_to_target = Dict(
+                            "suitesparse" => "libsuitesparse",
+                        )
                         for file in checksum_files_that_need_refreshing
-                            run(`make -f contrib/refresh_checksums.mk $(file)`)
+                            if haskey(file_to_target, file)
+                                target = file_to_target[file]
+                            else
+                                target = file
+                            end
+                            run(`make -f contrib/refresh_checksums.mk $(target)`)
                         end
                         run(`git add -A`)
                         run(`git commit -m "$(commit_message)"`)
@@ -211,7 +219,7 @@ function _bump_single_stdlib(stdlib::StdlibInfo, config::Config, state::State)
                         if do_push
                             run(`git push --force origin $(pr_branch)`)
                         end
-                        whoami = GitHub.whoami(; auth = config.auth).login
+                        whoami = whoami_username(; config.auth)
                         pr_head_with_fork_owner = "$(whoami):$(pr_branch)"
                         pr_state = Dict{String, Any}(
                             "base" => upstream_julia_repo_default_branch,
@@ -220,8 +228,8 @@ function _bump_single_stdlib(stdlib::StdlibInfo, config::Config, state::State)
                             "maintainer_can_modify" => true,
                             "title" => pr_title,
                         )
-                        @debug "" upstream_julia_repo_gh
-                        @debug "" fork_julia_repo_gh
+                        @debug "" upstream_julia_repo_gh.full_name
+                        @debug "" fork_julia_repo_gh.full_name
                         @debug "" pr_state
                         pr = create_or_update_pull_request(upstream_julia_repo_gh, pr_state; auth = config.auth)
                     end # cd(joinpath(temp_dir, "FORK"))

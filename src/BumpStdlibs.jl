@@ -1,8 +1,10 @@
 module BumpStdlibs
 
 import Dates
+import Downloads
 import GitHub
 import HTTP
+import JSON3
 import TimeZones
 import URIs
 
