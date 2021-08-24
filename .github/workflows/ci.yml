@@ -27,7 +27,7 @@ jobs:
       - run: rm -rf /tmp/julia
       - run: mkdir -p /tmp
       - run: cd /tmp && git clone https://github.com/JuliaLang/julia.git
-      - run: cd /tmp/julia && git checkout 361b3a48e2ce05a05f7e3c01903d18bf114432e3
+      - run: cd /tmp/julia && git checkout 705f489f3fb70cbe891ac6b898a71f4abc3bb11e
       - run: cd /tmp/julia && make -j2
       - run: cd /tmp/julia && make install
       - run: echo "/tmp/julia/usr/bin" >> $GITHUB_PATH
