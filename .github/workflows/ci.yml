@@ -22,12 +22,16 @@ jobs:
           - ubuntu-latest
     steps:
       - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
       - run: git config --global user.name "Dilum Aluthge"
       - run: git config --global user.email "dilum@aluthge.com"
       - run: rm -rf /tmp/julia
       - run: mkdir -p /tmp
       - run: cd /tmp && git clone https://github.com/JuliaLang/julia.git
       - run: cd /tmp/julia && git checkout 6b365acec611576afcf8dbf437bcc688ae014c62
+      - run: cd /tmp/julia && git revert --no-edit 6c4f2165619449182693061e07654b399428e0cf
+      - run: cd /tmp/julia && git log -n 2
       - run: cd /tmp/julia && make -j2
       - run: cd /tmp/julia && make install
       - run: echo "/tmp/julia/usr/bin" >> $GITHUB_PATH
