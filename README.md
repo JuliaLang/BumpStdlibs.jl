@@ -7,4 +7,4 @@
 
 Update the hashes and checksums of all Julia stdlibs in just four clicks.
 
-To get started, go to the [Usage](https://julialang.github.io/BumpStdlibs.jl/dev/usage/) page.
+To get started, go to the [Usage](https://julialang.github.io/BumpStdlibs.jl/dev/usage/) page in the documentation.
