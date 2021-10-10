@@ -23,7 +23,7 @@ function get_stdlib_list(upstream::GitHub.Repo, branch_name::AbstractString; aut
                                 m4 = match(my_regex_4, stdlib_version_line)
                                 m5 = match(my_regex_5, stdlib_version_line)
                                 if !(m2 isa Nothing)
-                                    branch_dict[:git_url] = m2[2]
+                                    branch_dict[:git_url] = strip(m2[2])
                                 elseif !(m4 isa Nothing)
                                     branch_dict[:branch] = m4[2]
                                 elseif !(m5 isa Nothing)
