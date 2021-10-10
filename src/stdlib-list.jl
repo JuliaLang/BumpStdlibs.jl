@@ -30,6 +30,8 @@ function get_stdlib_list(upstream::GitHub.Repo, branch_name::AbstractString; aut
                                     current_shas[lowercase(m5[2])] = m5[3]
                                 end
                             end
+                            @assert haskey(branch_dict, :branch) "$filename is missing a _BRANCH = entry"
+                            @assert haskey(branch_dict, :git_url) "$filename is missing a _GIT_URL := entry"
                             branch = branch_dict[:branch]
                             git_url = branch_dict[:git_url]
                             stdlib = StdlibInfo(;
