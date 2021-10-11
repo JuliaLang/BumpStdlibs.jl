@@ -92,9 +92,7 @@ function _bump_single_stdlib(stdlib::StdlibInfo, config::Config, state::State)
     upstream_julia_repo_default_branch = state.upstream_julia_repo_default_branch
     mktempdir() do temp_dir
         cd(temp_dir) do
-            name = stdlib.name
-            token = auth.token
-            fork_clone_url = "https://x-access-token:$(token)@github.com/$(fork_julia_repo_gh.full_name).git"
+            fork_clone_url = "https://x-access-token:$(auth.token)@github.com/$(fork_julia_repo_gh.full_name).git"
             run(`git clone $(fork_clone_url) FORK`)
             cd("FORK") do # we do this just to double-check that the `FORK` directory was created
             end
@@ -118,7 +116,7 @@ function _bump_single_stdlib(stdlib::StdlibInfo, config::Config, state::State)
                     cd(joinpath(temp_dir, "FORK")) do
                         run(`git checkout $(upstream_julia_repo_default_branch)`)
                         assert_current_branch_is(upstream_julia_repo_default_branch)
-                        pr_title_without_emoji = "Bump the $(name) stdlib from $(stdlib_current_commit_in_upstream_short) to $(stdlib_latest_commit_short)"
+                        pr_title_without_emoji = "Bump the $(stdlib.name) stdlib from $(stdlib_current_commit_in_upstream_short) to $(stdlib_latest_commit_short)"
                         pr_title = "🤖 $(pr_title_without_emoji)"
                         commit_message = pr_title
                         pr_branch_suffix_stripped = strip(pr_branch_suffix)
@@ -127,12 +125,14 @@ function _bump_single_stdlib(stdlib::StdlibInfo, config::Config, state::State)
                         else
                             pr_branch_suffix_with_hyphen = "-$(pr_branch_suffix_stripped)"
                         end
-                        pr_branch = "BumpStdlibs/$(name)-$(stdlib_latest_commit_short)$(pr_branch_suffix_with_hyphen)"
+                        pr_branch = "BumpStdlibs/$(stdlib.name)-$(stdlib_latest_commit_short)$(pr_branch_suffix_with_hyphen)"
                         push!(state.all_pr_branches, pr_branch)
+                        git_url_markdown = _git_url_to_formatted_markdown(stdlib.git_url)
                         bumpstdlibs_sender = strip(get(ENV, "BUMPSTDLIBS_SENDER", ""))
-                        bumpstdlibs_sender_ping = isempty(bumpstdlibs_sender) ? "unknown" : "@$(bumpstdlibs_sender)"
+                        bumpstdlibs_sender_ping = isempty(bumpstdlibs_sender) ? "unknown user" : "@$(bumpstdlibs_sender)"
                         pr_body_lines = String[
-                            "Stdlib: $(name)",
+                            "Stdlib: $(stdlib.name)",
+                            "URL: $(git_url_markdown)",
                             "Branch: $(stdlib.branch)",
                             "Old commit: $(stdlib_current_commit_in_upstream_short)",
                             "New commit: $(stdlib_latest_commit_short)",
@@ -147,7 +147,7 @@ function _bump_single_stdlib(stdlib::StdlibInfo, config::Config, state::State)
                         pr_body = strip(join(strip.(pr_body_lines), "\n"))
                         run(`git checkout -B $(pr_branch)`)
                         assert_current_branch_is(pr_branch)
-                        version_filename = joinpath("stdlib", "$(name).version")
+                        version_filename = joinpath("stdlib", "$(stdlib.name).version")
                         old_version_contents = strip(read(version_filename, String))
                         new_version_contents = replace(old_version_contents, stdlib_current_commit_in_upstream => stdlib_latest_commit)
                         rm(version_filename; force = true, recursive = true)
@@ -158,14 +158,14 @@ function _bump_single_stdlib(stdlib::StdlibInfo, config::Config, state::State)
                         for (root, dirs, files) in walkdir(joinpath(pwd(), "deps", "checksums"))
                             for file in files
                                 full_path = joinpath(root, file)
-                                startswith(strip(file), "$(name)-") && ispath(full_path) && rm(full_path; force = true, recursive = true)
+                                startswith(strip(file), "$(stdlib.name)-") && ispath(full_path) && rm(full_path; force = true, recursive = true)
                             end
                         end
                         directories_to_delete = String[]
                         for (root, dirs, files) in walkdir(joinpath(pwd(), "deps", "checksums"))
                             for dir in dirs
                                 full_path = joinpath(root, dir)
-                                if startswith(strip(dir), "$(name)-")
+                                if startswith(strip(dir), "$(stdlib.name)-")
                                     @debug "" root dir full_path
                                     if isdir(full_path)
                                         push!(directories_to_delete, full_path)
@@ -185,7 +185,7 @@ function _bump_single_stdlib(stdlib::StdlibInfo, config::Config, state::State)
                                 full_path = joinpath(root, file)
                                 contains_matching_lines = delete_checksum_lines(;
                                     checksum_file = full_path,
-                                    stdlib_name = name,
+                                    stdlib_name = stdlib.name,
                                 )
                                 if contains_matching_lines
                                     push!(checksum_files_that_need_refreshing, file)
