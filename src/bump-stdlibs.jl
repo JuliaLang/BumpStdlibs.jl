@@ -137,13 +137,12 @@ function _bump_single_stdlib(stdlib::StdlibInfo, config::Config, state::State)
                             "Old commit: $(stdlib_current_commit_in_upstream_short)",
                             "New commit: $(stdlib_latest_commit_short)",
                             "Bump invoked by: $(bumpstdlibs_sender_ping)",
+                            "Powered by: [BumpStdlibs.jl](https://github.com/JuliaLang/BumpStdlibs.jl)",
                             "",
                             "```",
                             "\$ $(strip(string(changelog_cmd), '`'))",
                             changelog,
                             "```",
-                            "",
-                            "Powered by [BumpStdlibs.jl](https://github.com/JuliaLang/BumpStdlibs.jl)",
                         ]
                         pr_body = strip(join(strip.(pr_body_lines), "\n"))
                         run(`git checkout -B $(pr_branch)`)
