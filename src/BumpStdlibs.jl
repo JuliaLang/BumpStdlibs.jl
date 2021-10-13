@@ -21,5 +21,6 @@ include("git.jl")
 include("github.jl")
 include("inputs.jl")
 include("stdlib-list.jl")
+include("util.jl")
 
 end # end module BumpStdlibs
