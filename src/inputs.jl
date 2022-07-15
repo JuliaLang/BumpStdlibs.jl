@@ -33,7 +33,7 @@ function get_input_from_environment(input::Symbol,
         env_var_contents = strip(get(ENV, env_var_name_to_use, ""))
         if isempty(env_var_contents)
             if default_value isa Nothing
-                throw(ArgumentError("Either the `$(_env_var_name)` environment variable is undefined, or it is defined but empty."))
+                throw(ArgumentError("Either the `$env_var_name` environment variable is undefined, or it is defined but empty."))
             else
                 return post_process_input(Val(input), default_value)
             end
