@@ -234,6 +234,7 @@ function _bump_single_stdlib(stdlib::StdlibInfo, config::Config, state::State)
                             "maintainer_can_modify" => true,
                             "title" => pr_title,
                         )
+                        @debug "" pr_body
                         @debug "" upstream_julia_repo_gh.full_name
                         @debug "" fork_julia_repo_gh.full_name
                         @debug "" pr_state
