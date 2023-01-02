@@ -6,6 +6,7 @@ import GitHub
 import HTTP
 import JSON3
 import TimeZones
+import TOML
 import URIs
 
 export StdlibInfo
