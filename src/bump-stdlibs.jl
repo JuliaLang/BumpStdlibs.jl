@@ -25,13 +25,8 @@ function bump_stdlibs(julia_repo::AbstractString, config::Config)
     fork_julia_repo_name = upstream_julia_repo_name
     fork_julia_repo = "$(fork_julia_repo_owner)/$(fork_julia_repo_name)"
     fork_julia_repo_gh = create_or_get_fork(fork_julia_repo, upstream_julia_repo_gh; auth = config.auth)
-    if config.julia_repo_default_branch isa Nothing
-        upstream_julia_repo_default_branch = convert(String, upstream_julia_repo_gh.default_branch)::String
-    else
-        upstream_julia_repo_default_branch = convert(String, config.julia_repo_default_branch)::String
-    end
-    update_fork_branch(fork_julia_repo_gh, upstream_julia_repo_gh, upstream_julia_repo_gh.default_branch; auth = config.auth)
-    stdlib_list = get_stdlib_list(upstream_julia_repo_gh, upstream_julia_repo_gh.default_branch; auth = config.auth)
+    update_fork_branch(fork_julia_repo_gh, upstream_julia_repo_gh, config.julia_repo_target_branch; auth = config.auth)
+    stdlib_list = get_stdlib_list(upstream_julia_repo_gh, config.julia_repo_target_branch; auth = config.auth)
     @info "Identified $(length(stdlib_list)) stdlibs that live in external repositories"
     for (i, stdlib) in enumerate(stdlib_list)
         @info "" i stdlib
@@ -45,7 +40,6 @@ function bump_stdlibs(julia_repo::AbstractString, config::Config)
     all_pr_branches = String[]
     state = State(;
         fork_julia_repo_gh = fork_julia_repo_gh,
-        upstream_julia_repo_default_branch = upstream_julia_repo_default_branch,
         upstream_julia_repo_gh = upstream_julia_repo_gh,
     )
     for (i, stdlib) in enumerate(filtered_stdlib_list)
@@ -89,7 +83,6 @@ function _bump_single_stdlib(stdlib::StdlibInfo, config::Config, state::State)
     pr_branch_suffix = config.pr_branch_suffix
     fork_julia_repo_gh = state.fork_julia_repo_gh
     upstream_julia_repo_gh = state.upstream_julia_repo_gh
-    upstream_julia_repo_default_branch = state.upstream_julia_repo_default_branch
     mktempdir() do temp_dir
         cd(temp_dir) do
             fork_clone_url = "https://x-access-token:$(auth.token)@github.com/$(fork_julia_repo_gh.full_name).git"
@@ -124,8 +117,8 @@ function _bump_single_stdlib(stdlib::StdlibInfo, config::Config, state::State)
                 else
                     @info "stdlib is not up to date, so I will update it now" stdlib stdlib_latest_commit stdlib_current_commit_in_upstream
                     cd(joinpath(temp_dir, "FORK")) do
-                        run(`git checkout $(upstream_julia_repo_default_branch)`)
-                        assert_current_branch_is(upstream_julia_repo_default_branch)
+                        run(`git checkout $(config.julia_repo_target_branch)`)
+                        assert_current_branch_is(config.julia_repo_target_branch)
                         pr_title_without_emoji = "Bump the $(stdlib.name) stdlib from $(stdlib_current_commit_in_upstream_short) to $(stdlib_latest_commit_short)"
                         pr_title = "🤖 $(pr_title_without_emoji)"
                         commit_message = pr_title
@@ -237,7 +230,7 @@ function _bump_single_stdlib(stdlib::StdlibInfo, config::Config, state::State)
                         whoami = whoami_username(; config.auth)
                         pr_head_with_fork_owner = "$(whoami):$(pr_branch)"
                         pr_state = Dict{String, Any}(
-                            "base" => upstream_julia_repo_default_branch,
+                            "base" => config.julia_repo_target_branch,
                             "body" => strip(pr_body),
                             "head" => pr_head_with_fork_owner,
                             "maintainer_can_modify" => true,

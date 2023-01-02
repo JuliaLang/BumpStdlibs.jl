@@ -15,19 +15,18 @@ Base.@kwdef struct StdlibInfo
     current_shas::Dict{String, String}
 end
 
-Base.@kwdef struct Config{C1 <: GitHub.Authorization, C2 <: Bool, C3 <: Dates.AbstractTime, C4 <: AbstractString, C5 <: Bool, C6 <: Union{AbstractString, Nothing}, C7 <: Union{AbstractString, AbstractVector{<:AbstractString}}}
-    auth::C1 = get_input_from_environment(:auth)
-    close_old_pull_requests::C2 = get_input_from_environment(:close_old_pull_requests)
-    close_old_pull_requests_older_than::C3 = Dates.Minute(0)
-    pr_branch_suffix::C4 = ""
-    push_if_no_changes::C5 = get_input_from_environment(:push_if_no_changes)
-    julia_repo_default_branch::C6 = nothing
-    stdlibs_to_include::C7 = get_input_from_environment(:stdlibs_to_include)
+Base.@kwdef struct Config
+    auth::GitHub.Authorization = get_input_from_environment(:auth)
+    close_old_pull_requests::Bool = get_input_from_environment(:close_old_pull_requests)
+    close_old_pull_requests_older_than::Dates.AbstractTime = Dates.Minute(0)
+    julia_repo_target_branch::String = get_input_from_environment(:target_branch)
+    pr_branch_suffix::String = ""
+    push_if_no_changes::Bool = get_input_from_environment(:push_if_no_changes)
+    stdlibs_to_include::Union{String, Vector{String}} = get_input_from_environment(:stdlibs_to_include)
 end
 
-Base.@kwdef struct State{S1 <: AbstractVector{<:AbstractString}, S2 <: GitHub.Repo, S3 <:AbstractString, S4 <: GitHub.Repo}
-    all_pr_branches::S1 = String[]
-    fork_julia_repo_gh::S2
-    upstream_julia_repo_default_branch::S3
-    upstream_julia_repo_gh::S4
+Base.@kwdef struct State
+    all_pr_branches::Vector{String} = String[]
+    fork_julia_repo_gh::GitHub.Repo
+    upstream_julia_repo_gh::GitHub.Repo
 end

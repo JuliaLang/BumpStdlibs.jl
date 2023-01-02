@@ -1,8 +1,9 @@
 const INPUTS = Dict{Symbol, Any}(
-    :auth                    => ("BUMPSTDLIBS_TOKEN",                   nothing),
-    :close_old_pull_requests => ("BUMPSTDLIBS_CLOSE_OLD_PULL_REQUESTS", "true"),
-    :push_if_no_changes      => ("BUMPSTDLIBS_PUSH_IF_NO_CHANGES",      "false"),
-    :stdlibs_to_include      => ("BUMPSTDLIBS_STDLIBS_TO_INCLUDE",      "all"),
+    :auth                    => "BUMPSTDLIBS_TOKEN",
+    :close_old_pull_requests => "BUMPSTDLIBS_CLOSE_OLD_PULL_REQUESTS",
+    :push_if_no_changes      => "BUMPSTDLIBS_PUSH_IF_NO_CHANGES",
+    :stdlibs_to_include      => "BUMPSTDLIBS_STDLIBS_TO_INCLUDE",
+    :target_branch           => "BUMPSTDLIBS_TARGET_BRANCH",
 )
 
 function post_process_input(::Val, value)
@@ -22,23 +23,15 @@ function post_process_input(::Val{:push_if_no_changes}, value)
 end
 
 function get_input_from_environment(input::Symbol,
-                                    env_var_name::Union{AbstractString, Nothing} = nothing)
+                                    name::Union{AbstractString, Nothing} = nothing)
     if haskey(INPUTS, input)
-        default_env_var_name, default_value = INPUTS[input]
-        if env_var_name isa Nothing
-            env_var_name_to_use = default_env_var_name
+        default_name = INPUTS[input]
+        name = something(name, default_name)
+        contents = strip(ENV[name])
+        if isempty(contents)
+            throw(ArgumentError("The `$name` environment variable is defined but empty."))
         else
-            env_var_name_to_use = env_var_name
-        end
-        env_var_contents = strip(get(ENV, env_var_name_to_use, ""))
-        if isempty(env_var_contents)
-            if default_value isa Nothing
-                throw(ArgumentError("Either the `$env_var_name` environment variable is undefined, or it is defined but empty."))
-            else
-                return post_process_input(Val(input), default_value)
-            end
-        else
-            return post_process_input(Val(input), env_var_contents)
+            return post_process_input(Val(input), contents)
         end
     end
     throw(ArgumentError("$(input) is not a valid input"))
