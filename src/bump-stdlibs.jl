@@ -107,7 +107,11 @@ function _bump_single_stdlib(stdlib::StdlibInfo, config::Config, state::State)
                 stdlib_current_commit_in_upstream_short = strip(read(`git rev-parse --short $(stdlib_current_commit_in_upstream)`, String))
                 assert_string_startswith(stdlib_current_commit_in_upstream, stdlib_current_commit_in_upstream_short)
                 run(`git fetch --all --prune`)
-                stdlib_version = Base.VersionNumber(Base.parsed_toml("Project.toml")["version"])
+                stdlib_version = if isfile("Project.toml")
+                    Base.VersionNumber(Base.parsed_toml("Project.toml")["version"])
+                else
+                    "No Project.toml found for stdlib!"
+                end
                 changelog_cmd = `git log --oneline $(stdlib_current_commit_in_upstream_short)..$(stdlib_latest_commit_short)`
                 changelog = read(changelog_cmd, String)
                 if stdlib_latest_commit == stdlib_current_commit_in_upstream
@@ -132,7 +136,7 @@ function _bump_single_stdlib(stdlib::StdlibInfo, config::Config, state::State)
                         bumpstdlibs_sender = strip(get(ENV, "BUMPSTDLIBS_SENDER", ""))
                         bumpstdlibs_sender_ping = isempty(bumpstdlibs_sender) ? "unknown user" : "@$(bumpstdlibs_sender)"
                         julia_version = Base.VersionNumber(read("VERSION", String))
-                        version_match = Base.thispatch(julia_version) == Base.thispatch(stdlib_version)
+                        version_match = Base.thispatch(julia_version) === Base.thispatch(stdlib_version)
                         pr_body_lines = String[
                             "Stdlib: $(stdlib.name)",
                             "URL: $(git_url_markdown)",
