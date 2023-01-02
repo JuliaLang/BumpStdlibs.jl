@@ -108,7 +108,11 @@ function _bump_single_stdlib(stdlib::StdlibInfo, config::Config, state::State)
                 assert_string_startswith(stdlib_current_commit_in_upstream, stdlib_current_commit_in_upstream_short)
                 run(`git fetch --all --prune`)
                 stdlib_version = if isfile("Project.toml")
-                    Base.VersionNumber(Base.parsed_toml("Project.toml")["version"])
+                    try
+                        Base.VersionNumber(Base.parsed_toml("Project.toml")["version"])
+                    catch
+                        "stdlib Project.toml has no version entry!"
+                    end
                 else
                     "No Project.toml found for stdlib!"
                 end
