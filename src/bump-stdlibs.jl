@@ -140,7 +140,7 @@ function _bump_single_stdlib(stdlib::StdlibInfo, config::Config, state::State)
                         bumpstdlibs_sender = strip(get(ENV, "BUMPSTDLIBS_SENDER", ""))
                         bumpstdlibs_sender_ping = isempty(bumpstdlibs_sender) ? "unknown user" : "@$(bumpstdlibs_sender)"
                         julia_version = Base.VersionNumber(read("VERSION", String))
-                        version_match = Base.thispatch(julia_version) === Base.thispatch(stdlib_version)
+                        version_match = stdlib_version isa VersionNumber && Base.thispatch(julia_version) === Base.thispatch(stdlib_version)
                         pr_body_lines = String[
                             "Stdlib: $(stdlib.name)",
                             "URL: $(git_url_markdown)",
