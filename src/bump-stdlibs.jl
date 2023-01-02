@@ -109,7 +109,7 @@ function _bump_single_stdlib(stdlib::StdlibInfo, config::Config, state::State)
                 run(`git fetch --all --prune`)
                 stdlib_version = if isfile("Project.toml")
                     try
-                        Base.VersionNumber(Base.parsed_toml("Project.toml")["version"])
+                        Base.VersionNumber(TOML.parse("Project.toml")["version"])
                     catch
                         "stdlib Project.toml has no version entry!"
                     end
