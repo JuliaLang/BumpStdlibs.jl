@@ -2,18 +2,24 @@ name: BumpStdlibs
 on:
   workflow_dispatch:
     inputs:
+      BUMPSTDLIBS_TARGET_BRANCH:
+        description: 'Target branch (in the JuliaLang/julia) to target. Examples include master, backports-release-1.9, etc.'
+        required: true
+        default: 'master'
       BUMPSTDLIBS_STDLIBS_TO_INCLUDE:
         description: 'Comma-separated list of stdlibs to include like "Pkg,Downloads", or "all" for all:'
-        required: false
+        required: true
         default: 'all'
       BUMPSTDLIBS_CLOSE_OLD_PULL_REQUESTS:
-        description: 'Close outdated pull requests: (true/false)'
-        required: false
-        default: 'true'
+        description: 'Close outdated pull requests. Default: yes'
+        type: boolean
+        required: true
+        default: true
       BUMPSTDLIBS_PUSH_IF_NO_CHANGES:
-        description: 'Push (and retrigger CI) even if there are no changes: (true/false)'
-        required: false
-        default: 'false'
+        description: 'Push (and retrigger CI) even if there are no changes. Default: no'
+        type: boolean
+        required: true
+        default: false
 jobs:
   BumpStdlibs:
     if: github.event_name == 'workflow_dispatch'
@@ -28,7 +34,8 @@ jobs:
         env:
           BUMPSTDLIBS_CLOSE_OLD_PULL_REQUESTS: ${{ github.event.inputs.BUMPSTDLIBS_CLOSE_OLD_PULL_REQUESTS }}
           BUMPSTDLIBS_PUSH_IF_NO_CHANGES: ${{ github.event.inputs.BUMPSTDLIBS_PUSH_IF_NO_CHANGES }}
-          BUMPSTDLIBS_STDLIBS_TO_INCLUDE: ${{ github.event.inputs.BUMPSTDLIBS_STDLIBS_TO_INCLUDE }}
-          BUMPSTDLIBS_TOKEN: ${{ secrets.BUMPSTDLIBS_TOKEN }}
           BUMPSTDLIBS_SENDER: ${{ github.event.sender.login }}
+          BUMPSTDLIBS_STDLIBS_TO_INCLUDE: ${{ github.event.inputs.BUMPSTDLIBS_STDLIBS_TO_INCLUDE }}
+          BUMPSTDLIBS_TARGET_BRANCH: ${{ github.event.inputs.BUMPSTDLIBS_TARGET_BRANCH }}
+          BUMPSTDLIBS_TOKEN: ${{ secrets.BUMPSTDLIBS_TOKEN }}
           JULIA_DEBUG: 'all'
