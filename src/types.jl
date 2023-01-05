@@ -1,3 +1,11 @@
+function force_string(s::AbstractString)::String
+    return convert(String, s)::String
+end
+
+function force_string(v::AbstractVector{<:AbstractString})::Vector{String}
+    return convert(Vector{String}, v)::Vector{String}
+end
+
 """
 ```
 Base.@kwdef struct StdlibInfo
@@ -22,7 +30,7 @@ Base.@kwdef struct Config
     julia_repo_target_branch::String = get_input_from_environment(:target_branch)
     pr_branch_suffix::String = ""
     push_if_no_changes::Bool = get_input_from_environment(:push_if_no_changes)
-    stdlibs_to_include::Union{String, Vector{String}} = get_input_from_environment(:stdlibs_to_include)
+    stdlibs_to_include::Union{String, Vector{String}} = force_string(get_input_from_environment(:stdlibs_to_include))
 end
 
 Base.@kwdef struct State
