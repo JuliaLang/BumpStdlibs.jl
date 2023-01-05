@@ -1,3 +1,11 @@
+function force_string(s::AbstractString)::String
+    return convert(String, s)::String
+end
+
+function force_string(v::AbstractVector{<:AbstractString})::Vector{String}
+    return convert(Vector{String}, v)::Vector{String}
+end
+
 """
 ```
 Base.@kwdef struct StdlibInfo
