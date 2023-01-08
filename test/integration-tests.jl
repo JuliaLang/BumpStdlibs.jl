@@ -6,7 +6,7 @@
         :close_old_pull_requests => true,
         :close_old_pull_requests_older_than => Dates.Minute(5),
         :julia_repo_target_branch => "master",
-        :pr_branch_suffix => Random.randstring(4),
+        :pr_branch_suffix => Random.randstring('0':'9', 4),
         :push_if_no_changes => true,
         :stdlibs_to_include => "Pkg",
     )

@@ -60,9 +60,12 @@ function bump_stdlibs(julia_repo::AbstractString, config::Config)
                 cd("FORK") do
                     run(`git fetch --all --prune`)
                     for (i, stdlib) in enumerate(filtered_stdlib_list)
-                        prefix = "BumpStdlibs/$(stdlib.name)-"
-                        delete_branches_with_prefix_on_origin_older_than(
-                            prefix,
+                        predicate = generate_predicate_branch_matches_stdlib_and_target_branch(;
+                            stdlib,
+                            target_branch = config.julia_repo_target_branch,
+                        )
+                        delete_branches_with_predicate_on_origin_older_than(
+                            predicate,
                             config.close_old_pull_requests_older_than;
                             exclude = state.all_pr_branches,
                         )
@@ -119,16 +122,20 @@ function _bump_single_stdlib(stdlib::StdlibInfo, config::Config, state::State)
                     cd(joinpath(temp_dir, "FORK")) do
                         run(`git checkout $(config.julia_repo_target_branch)`)
                         assert_current_branch_is(config.julia_repo_target_branch)
-                        pr_title_without_emoji = "Bump the $(stdlib.name) stdlib from $(stdlib_current_commit_in_upstream_short) to $(stdlib_latest_commit_short)"
+                        pr_title_without_emoji = "Bump the $(stdlib.name) stdlib from $(stdlib_current_commit_in_upstream_short) to $(stdlib_latest_commit_short) on the `$(config.julia_repo_target_branch)` branch"
                         pr_title = "🤖 $(pr_title_without_emoji)"
                         commit_message = pr_title
                         pr_branch_suffix_stripped = strip(pr_branch_suffix)
                         if isempty(pr_branch_suffix_stripped)
                             pr_branch_suffix_with_hyphen = ""
                         else
+                            if !occursin(r"^[\d]*?$", pr_branch_suffix_stripped)
+                                msg = "Suffix must only be numerical: $(pr_branch_suffix_stripped)"
+                                throw(ErrorException(msg))
+                            end
                             pr_branch_suffix_with_hyphen = "-$(pr_branch_suffix_stripped)"
                         end
-                        pr_branch = "BumpStdlibs/$(stdlib.name)-$(stdlib_latest_commit_short)$(pr_branch_suffix_with_hyphen)"
+                        pr_branch = "BumpStdlibs$(pr_branch_suffix_with_hyphen)/$(stdlib.name)-$(stdlib_latest_commit_short)-$(config.julia_repo_target_branch)"
                         push!(state.all_pr_branches, pr_branch)
                         git_url_markdown = _git_url_to_formatted_markdown(stdlib.git_url)
                         bumpstdlibs_sender = strip(get(ENV, "BUMPSTDLIBS_SENDER", ""))
@@ -138,7 +145,8 @@ function _bump_single_stdlib(stdlib::StdlibInfo, config::Config, state::State)
                         pr_body_lines = String[
                             "Stdlib: $(stdlib.name)",
                             "URL: $(git_url_markdown)",
-                            "Branch: $(stdlib.branch)",
+                            "Stdlib branch: $(stdlib.branch)",
+                            "Julia branch: $(config.julia_repo_target_branch)",
                             "Old commit: $(stdlib_current_commit_in_upstream_short)",
                             "New commit: $(stdlib_latest_commit_short)",
                             "Julia version: $(julia_version)",

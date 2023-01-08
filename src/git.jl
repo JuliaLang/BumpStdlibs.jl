@@ -35,11 +35,53 @@ function delete_branch_on_origin(branch_name)
     return nothing
 end
 
-function delete_branches_with_prefix_on_origin_older_than(prefix::AbstractString,
-                                                          older_than::Dates.AbstractTime;
-                                                          exclude = String[])
+function parse_branch_name(original_str::AbstractString)
+    str = strip(original_str)
+    let
+        r = r"^BumpStdlibs\/([A-Za-z0-9]*?)-([a-z0-9]*?)-(.*?)$" # without suffix
+        m = match(r, str)
+        if m !== nothing
+            stdlib = m[1]
+            commit = m[2]
+            target_branch = m[3]
+            return (; stdlib, commit, target_branch)
+        end
+    end
+    let
+        r = r"^BumpStdlibs-[\d]*?\/([A-Za-z0-9]*?)-([a-z0-9]*?)-(.*?)$" # with suffix
+        m = match(r, str)
+        if m !== nothing
+            stdlib = m[1]
+            commit = m[2]
+            target_branch = m[3]
+            return (; stdlib, commit, target_branch)
+        end
+    end
+    return nothing
+end
+
+function branch_matches_stdlib_and_target_branch(; branch_name, stdlib, target_branch)
+    info = parse_branch_name(branch_name)
+    if info === nothing
+        return false
+    end
+    return ((stdlib == info.stdlib ) && (target_branch == info.target_branch))
+end
+
+function generate_predicate_branch_matches_stdlib_and_target_branch(; stdlib, target_branch)
+    predicate = branch_name -> branch_matches_stdlib_and_target_branch(;
+        branch_name,
+        stdlib,
+        target_branch,
+    )
+    return predicate
+end
+
+function delete_branches_with_predicate_on_origin_older_than(predicate::Function,
+                                                             older_than::Dates.AbstractTime;
+                                                             exclude = String[])
     for branch_name in get_origin_branches()
-        if startswith(branch_name, prefix)
+        if predicate(branch_name)
             commit = strip(read(`git rev-parse origin/$(branch_name)`, String))
             age = get_age_of_commit(commit)
             if !(branch_name in exclude)
