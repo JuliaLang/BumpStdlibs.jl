@@ -1,8 +1,6 @@
 name: CI
 on:
-  pull_request:
-    branches:
-      - master
+  # pull_request: # we use Bors
   push:
     branches:
       - master
@@ -12,10 +10,9 @@ on:
   workflow_dispatch:
 concurrency:
   group: integration-tests-global-lock
-  cancel-in-progress: false
+  cancel-in-progress: ${{ (github.ref == 'refs/heads/staging') || (github.ref == 'refs/heads/trying') }}
 jobs:
   test:
-    name: Julia ${{ matrix.version }} - ${{ matrix.os }} - ${{ matrix.arch }} - ${{ github.event_name }}
     runs-on: ${{ matrix.os }}
     timeout-minutes: 60
     strategy:
