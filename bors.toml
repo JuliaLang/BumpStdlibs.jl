@@ -2,5 +2,6 @@ delete_merged_branches = true
 status = [
     "test (1, ubuntu-latest, x64)",
     "test (nightly, ubuntu-latest, x64)",
+    "Documentation",
 ]
 timeout_sec = 3600
