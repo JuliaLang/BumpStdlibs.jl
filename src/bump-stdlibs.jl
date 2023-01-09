@@ -122,7 +122,7 @@ function _bump_single_stdlib(stdlib::StdlibInfo, config::Config, state::State)
                     cd(joinpath(temp_dir, "FORK")) do
                         run(`git checkout $(config.julia_repo_target_branch)`)
                         assert_current_branch_is(config.julia_repo_target_branch)
-                        pr_title_without_emoji = "Bump the $(stdlib.name) stdlib from $(stdlib_current_commit_in_upstream_short) to $(stdlib_latest_commit_short) on the `$(config.julia_repo_target_branch)` branch"
+                        pr_title_without_emoji = "[$(config.julia_repo_target_branch)] Bump the $(stdlib.name) stdlib from $(stdlib_current_commit_in_upstream_short) to $(stdlib_latest_commit_short)"
                         pr_title = "🤖 $(pr_title_without_emoji)"
                         commit_message = pr_title
                         pr_branch_suffix_stripped = strip(pr_branch_suffix)
