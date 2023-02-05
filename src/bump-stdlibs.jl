@@ -142,6 +142,7 @@ function _bump_single_stdlib(stdlib::StdlibInfo, config::Config, state::State)
                         bumpstdlibs_sender_ping = isempty(bumpstdlibs_sender) ? "unknown user" : "@$(bumpstdlibs_sender)"
                         julia_version = Base.VersionNumber(read("VERSION", String))
                         version_match = stdlib_version isa VersionNumber && Base.thispatch(julia_version) === Base.thispatch(stdlib_version)
+                        url_for_diff = chopsuffix(git_url_markdown, ".git")
                         pr_body_lines = String[
                             "Stdlib: $(stdlib.name)",
                             "URL: $(git_url_markdown)",
@@ -153,6 +154,8 @@ function _bump_single_stdlib(stdlib::StdlibInfo, config::Config, state::State)
                             "$(stdlib.name) version: $(stdlib_version)$(version_match ? "" : " (Does not match)")",
                             "Bump invoked by: $(bumpstdlibs_sender_ping)",
                             "Powered by: [BumpStdlibs.jl](https://github.com/JuliaLang/BumpStdlibs.jl)",
+                            "",
+                            "Diff: $(url_for_diff)/compare/$(stdlib_current_commit_in_upstream)...$(stdlib_latest_commit)",
                             "",
                             "```",
                             "\$ $(strip(string(changelog_cmd), '`'))",
