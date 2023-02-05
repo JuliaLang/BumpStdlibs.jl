@@ -154,6 +154,8 @@ function _bump_single_stdlib(stdlib::StdlibInfo, config::Config, state::State)
                             "Bump invoked by: $(bumpstdlibs_sender_ping)",
                             "Powered by: [BumpStdlibs.jl](https://github.com/JuliaLang/BumpStdlibs.jl)",
                             "",
+                            "Diff: $(git_url_markdown)/compare/$(stdlib_current_commit_in_upstream)...$(stdlib_latest_commit)"
+                            "",
                             "```",
                             "\$ $(strip(string(changelog_cmd), '`'))",
                             changelog,
