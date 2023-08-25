@@ -143,6 +143,21 @@ function _bump_single_stdlib(stdlib::StdlibInfo, config::Config, state::State)
                         julia_version = Base.VersionNumber(read("VERSION", String))
                         version_match = stdlib_version isa VersionNumber && Base.thispatch(julia_version) === Base.thispatch(stdlib_version)
                         url_for_diff = chopsuffix(git_url_markdown, ".git")
+                        # Some external stdlibs intentionally have
+                        # version numbers that don't match the
+                        # Julia version number:
+                        known_rogue_versioners = [
+                            "Downloads",
+                        ]
+                        if version_match
+                            version_match_statement = ""
+                        else
+                            if stdlib.name in known_rogue_versioners
+                                version_match_statement = "(It's okay that it doesn't match)"
+                            else
+                                version_match_statement = "(Does not match)"
+                            end
+                        end
                         pr_body_lines = String[
                             "Stdlib: $(stdlib.name)",
                             "URL: $(git_url_markdown)",
@@ -151,7 +166,7 @@ function _bump_single_stdlib(stdlib::StdlibInfo, config::Config, state::State)
                             "Old commit: $(stdlib_current_commit_in_upstream_short)",
                             "New commit: $(stdlib_latest_commit_short)",
                             "Julia version: $(julia_version)",
-                            "$(stdlib.name) version: $(stdlib_version)$(version_match ? "" : " (Does not match)")",
+                            "$(stdlib.name) version: $(stdlib_version)$(version_match_statement)",
                             "Bump invoked by: $(bumpstdlibs_sender_ping)",
                             "Powered by: [BumpStdlibs.jl](https://github.com/JuliaLang/BumpStdlibs.jl)",
                             "",
