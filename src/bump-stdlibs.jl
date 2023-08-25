@@ -147,6 +147,7 @@ function _bump_single_stdlib(stdlib::StdlibInfo, config::Config, state::State)
                         # version numbers that don't match the
                         # Julia version number:
                         known_rogue_versioners = [
+                            "DelimitedFiles",
                             "Downloads",
                         ]
                         if version_match
