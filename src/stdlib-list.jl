@@ -13,6 +13,7 @@ function get_stdlib_list(upstream::GitHub.Repo, branch_name::AbstractString; aut
                 for filename in readdir("stdlib")
                     if isfile(joinpath("stdlib", filename))
                         m3 = match(my_regex_3, filename)
+                        @show filename m3
                         if !(m3 isa Nothing)
                             name = m3[1]
                             current_shas = Dict{String, String}()
