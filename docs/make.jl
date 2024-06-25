@@ -16,7 +16,6 @@ makedocs(;
         "Usage" => "usage.md",
         "API" => "api.md",
     ],
-    strict=true,
     linkcheck=true,
 )
 
