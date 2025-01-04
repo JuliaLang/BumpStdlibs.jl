@@ -1,4 +1,5 @@
 name: CI
+
 on:
   # pull_request: # we use Bors
   push:
@@ -8,9 +9,11 @@ on:
       - trying
     tags: '*'
   workflow_dispatch:
+
 concurrency:
   group: integration-tests-global-lock
   cancel-in-progress: ${{ (github.ref == 'refs/heads/staging') || (github.ref == 'refs/heads/trying') }}
+
 jobs:
   test:
     runs-on: ${{ matrix.os }}
@@ -32,16 +35,7 @@ jobs:
         with:
           version: ${{ matrix.version }}
           arch: ${{ matrix.arch }}
-      - uses: actions/cache@v4
-        env:
-          cache-name: cache-artifacts
-        with:
-          path: ~/.julia/artifacts
-          key: ${{ runner.os }}-test-${{ env.cache-name }}-${{ hashFiles('**/Project.toml') }}
-          restore-keys: |
-            ${{ runner.os }}-test-${{ env.cache-name }}-
-            ${{ runner.os }}-test-
-            ${{ runner.os }}-
+      - uses: julia-actions/cache@v2
       - run: git config --global user.name "Dilum Aluthge"
       - run: git config --global user.email "dilum@aluthge.com"
       - uses: julia-actions/julia-buildpkg@v1
