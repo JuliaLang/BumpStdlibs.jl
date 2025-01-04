@@ -15,8 +15,19 @@ concurrency:
 
 jobs:
   integration-tests:
-    runs-on: ${{ matrix.os }}
+    runs-on: ubuntu-latest
     timeout-minutes: 60
+    #
+    # Because we use GitHub Merge Queue,
+    # the job name of the integration tests
+    # can't interpolate any info like
+    # Julia version number, or operating system.
+    # This constraint applies only to the integration tests.
+    #
+    # Other jobs (like unit tests, and docs)
+    # can have whatever names they want.
+    name: Integration
+    #
     # We don't actually want to run integration tests on pull requests,
     # because we want to avoid hitting rate limits.
     # So, if this is a PR build, mark the integration tests as "skipped".
@@ -24,19 +35,17 @@ jobs:
     strategy:
       fail-fast: false
       max-parallel: 1
-      matrix:
-        version:
-          - '1'
-        os:
-          - ubuntu-latest
-        arch:
-          - x64
+      # Note: Because we want to use GitHub Merge Queue,
+      # we can't use a matrix for the integration tests.
+      # This constraint applies only to the integration tests.
+      #
+      # We can still use a matrix for other jobs,
+      # such as unit tests and docs.
     steps:
       - uses: actions/checkout@v4
       - uses: julia-actions/setup-julia@v2
         with:
-          version: ${{ matrix.version }}
-          arch: ${{ matrix.arch }}
+          version: '1'
       - uses: julia-actions/cache@v2
       - run: git config --global user.name "Dilum Aluthge"
       - run: git config --global user.email "dilum@aluthge.com"
