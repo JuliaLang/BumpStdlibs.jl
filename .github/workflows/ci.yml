@@ -1,12 +1,11 @@
 name: CI
 
 on:
-  # pull_request: # we use Bors
+  merge_group: # GitHub Merge Queue
+  pull_request:
   push:
     branches:
       - master
-      - staging
-      - trying
     tags: '*'
   workflow_dispatch:
 
@@ -15,9 +14,13 @@ concurrency:
   cancel-in-progress: ${{ (github.ref == 'refs/heads/staging') || (github.ref == 'refs/heads/trying') }}
 
 jobs:
-  test:
+  integration-tests:
     runs-on: ${{ matrix.os }}
     timeout-minutes: 60
+    # We don't actually want to run integration tests on pull requests,
+    # because we want to avoid hitting rate limits.
+    # So, if this is a PR build, mark the integration tests as "skipped".
+    if: github.event_name != 'pull_request'
     strategy:
       fail-fast: false
       max-parallel: 1
