@@ -168,7 +168,7 @@ function _bump_single_stdlib(stdlib::StdlibInfo, config::Config, state::State)
                             "Old commit: $(stdlib_current_commit_in_upstream_short)",
                             "New commit: $(stdlib_latest_commit_short)",
                             "Julia version: $(julia_version)",
-                            "$(stdlib.name) version: $(stdlib_version)$(version_match_statement)",
+                            "$(stdlib.name) version: $(stdlib_version) $(version_match_statement)",
                             "Bump invoked by: $(bumpstdlibs_sender_ping)",
                             "Powered by: [BumpStdlibs.jl](https://github.com/JuliaLang/BumpStdlibs.jl)",
                             "",
