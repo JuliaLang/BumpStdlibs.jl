@@ -8,8 +8,10 @@ function parse_github_exception(ex::ErrorException)
     msgs = map(strip, split(ex.msg, '\n'))
     d = Dict()
     for m in msgs
-        a, b = split(m, ":"; limit=2)
-        d[a] = strip(b)
+        parts = split(m, ":"; limit=2)
+        if length(parts) == 2
+            d[parts[1]] = strip(parts[2])
+        end
     end
     return d
 end
@@ -17,8 +19,8 @@ end
 function is_pr_exists_exception(ex)
     d = parse_github_exception(ex)
 
-    if d["Status Code"] == "422" &&
-       match(r"A pull request already exists", d["Errors"]) !== nothing
+    if get(d, "Status Code", "") == "422" &&
+       match(r"A pull request already exists", get(d, "Errors", "")) !== nothing
         return true
     end
 

@@ -61,7 +61,7 @@ function bump_stdlibs(julia_repo::AbstractString, config::Config)
                     run(`git fetch --all --prune`)
                     for (i, stdlib) in enumerate(filtered_stdlib_list)
                         predicate = generate_predicate_branch_matches_stdlib_and_target_branch(;
-                            stdlib,
+                            stdlib = stdlib.name,
                             target_branch = config.julia_repo_target_branch,
                         )
                         delete_branches_with_predicate_on_origin_older_than(
