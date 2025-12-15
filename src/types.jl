@@ -35,6 +35,7 @@ end
 
 Base.@kwdef struct State
     all_pr_branches::Vector{String} = String[]
+    closed_pr_numbers::Dict{String, Vector{Int}} = Dict{String, Vector{Int}}()
     fork_julia_repo_gh::GitHub.Repo
     upstream_julia_repo_gh::GitHub.Repo
 end

@@ -77,25 +77,28 @@ function generate_predicate_branch_matches_stdlib_and_target_branch(; stdlib, ta
     return predicate
 end
 
-function delete_branches_with_predicate_on_origin_older_than(predicate::Function,
-                                                             older_than::Dates.AbstractTime;
-                                                             exclude = String[])
+function find_branches_to_delete(predicate::Function, older_than::Dates.AbstractTime; exclude = String[])
+    branches_to_delete = String[]
     for branch_name in get_origin_branches()
-        if predicate(branch_name)
+        if predicate(branch_name) && !(branch_name in exclude)
             commit = strip(read(`git rev-parse origin/$(branch_name)`, String))
             age = get_age_of_commit(commit)
-            if !(branch_name in exclude)
-                if age >= older_than
-                    @info "Attempting to delete branch" branch_name
-                    try
-                        delete_branch_on_origin(branch_name)
-                        @info "Successfully deleted branch" branch_name
-                    catch ex
-                        @info "Encountered an error while trying to delete branch" exception=(ex, catch_backtrace()) branch_name
-                    end
-
-                end
+            if age >= older_than
+                push!(branches_to_delete, branch_name)
             end
+        end
+    end
+    return branches_to_delete
+end
+
+function delete_branches(branches::Vector{String})
+    for branch_name in branches
+        @info "Attempting to delete branch" branch_name
+        try
+            delete_branch_on_origin(branch_name)
+            @info "Successfully deleted branch" branch_name
+        catch ex
+            @info "Encountered an error while trying to delete branch" exception=(ex, catch_backtrace()) branch_name
         end
     end
     return nothing
