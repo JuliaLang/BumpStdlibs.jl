@@ -42,6 +42,40 @@ function bump_stdlibs(julia_repo::AbstractString, config::Config)
         fork_julia_repo_gh = fork_julia_repo_gh,
         upstream_julia_repo_gh = upstream_julia_repo_gh,
     )
+    branches_to_delete = String[]
+    if config.close_old_pull_requests
+        mktempdir() do temp_dir
+            cd(temp_dir) do
+                fork_clone_url = "https://x-access-token:$(config.auth.token)@github.com/$(fork_julia_repo_gh.full_name).git"
+                run(`git clone $(fork_clone_url) FORK`)
+                cd("FORK") do
+                    run(`git fetch --all --prune`)
+                    for stdlib in filtered_stdlib_list
+                        predicate = generate_predicate_branch_matches_stdlib_and_target_branch(;
+                            stdlib = stdlib.name,
+                            target_branch = config.julia_repo_target_branch,
+                        )
+                        old_branches = find_branches_to_delete(
+                            predicate,
+                            config.close_old_pull_requests_older_than,
+                        )
+                        if !isempty(old_branches)
+                            append!(branches_to_delete, old_branches)
+                            pr_numbers = find_prs_for_branches(
+                                upstream_julia_repo_gh,
+                                whoami,
+                                old_branches;
+                                auth = config.auth,
+                            )
+                            if !isempty(pr_numbers)
+                                state.closed_pr_numbers[stdlib.name] = pr_numbers
+                            end
+                        end
+                    end
+                end # cd("FORK")
+            end # cd(temp_dir)
+        end # mktempdir()
+    end
     for (i, stdlib) in enumerate(filtered_stdlib_list)
         @info "Starting to work on" i stdlib length(filtered_stdlib_list)
         try
@@ -52,27 +86,20 @@ function bump_stdlibs(julia_repo::AbstractString, config::Config)
             @error "Encountered an error while working on" exception=(ex, catch_backtrace()) i stdlib length(filtered_stdlib_list)
         end
     end
-    if config.close_old_pull_requests
-        mktempdir() do temp_dir
-            cd(temp_dir) do
-                fork_clone_url = "https://x-access-token:$(config.auth.token)@github.com/$(state.fork_julia_repo_gh.full_name).git"
-                run(`git clone $(fork_clone_url) FORK`)
-                cd("FORK") do
-                    run(`git fetch --all --prune`)
-                    for (i, stdlib) in enumerate(filtered_stdlib_list)
-                        predicate = generate_predicate_branch_matches_stdlib_and_target_branch(;
-                            stdlib = stdlib.name,
-                            target_branch = config.julia_repo_target_branch,
-                        )
-                        delete_branches_with_predicate_on_origin_older_than(
-                            predicate,
-                            config.close_old_pull_requests_older_than;
-                            exclude = state.all_pr_branches,
-                        )
-                    end
-                end # cd("FORK")
-            end # cd(temp_dir)
-        end # end mktempdir()
+    if config.close_old_pull_requests && !isempty(branches_to_delete)
+        branches_to_actually_delete = filter(b -> !(b in state.all_pr_branches), branches_to_delete)
+        if !isempty(branches_to_actually_delete)
+            mktempdir() do temp_dir
+                cd(temp_dir) do
+                    fork_clone_url = "https://x-access-token:$(config.auth.token)@github.com/$(state.fork_julia_repo_gh.full_name).git"
+                    run(`git clone $(fork_clone_url) FORK`)
+                    cd("FORK") do
+                        run(`git fetch --all --prune`)
+                        delete_branches(branches_to_actually_delete)
+                    end # cd("FORK")
+                end # cd(temp_dir)
+            end # mktempdir()
+        end
     end
     if !isempty(errors)
         @error "Encountered at least one error" errors
@@ -179,6 +206,13 @@ function _bump_single_stdlib(stdlib::StdlibInfo, config::Config, state::State)
                             changelog,
                             "```",
                         ]
+                        superseded_prs = get(state.closed_pr_numbers, stdlib.name, Int[])
+                        if !isempty(superseded_prs)
+                            push!(pr_body_lines, "")
+                            for pr_num in sort(superseded_prs)
+                                push!(pr_body_lines, "Supersedes #$(pr_num)")
+                            end
+                        end
                         pr_body = strip(join(strip.(pr_body_lines), "\n"))
                         run(`git checkout -B $(pr_branch)`)
                         assert_current_branch_is(pr_branch)

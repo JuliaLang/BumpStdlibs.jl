@@ -118,3 +118,26 @@ function update_fork_branch(fork::GitHub.Repo, upstream::GitHub.Repo, branch_nam
     end # mktempdir()
     return nothing
 end
+
+function find_prs_for_branches(upstream_repo::GitHub.Repo, fork_owner::String, branches::Vector{String}; auth)
+    pr_numbers = Int[]
+    for branch in branches
+        head = "$(fork_owner):$(branch)"
+        try
+            found_prs, _ = GitHub.pull_requests(
+                upstream_repo;
+                auth=auth,
+                params=Dict(
+                    "state" => "open",
+                    "head" => head,
+                ),
+            )
+            for pr in found_prs
+                push!(pr_numbers, pr.number)
+            end
+        catch ex
+            @debug "Error finding PRs for branch" branch exception=(ex, catch_backtrace())
+        end
+    end
+    return pr_numbers
+end
