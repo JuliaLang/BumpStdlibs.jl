@@ -46,7 +46,7 @@ jobs:
       - uses: julia-actions/setup-julia@v2
         with:
           version: '1'
-      - uses: julia-actions/cache@v2
+      - uses: julia-actions/cache@v3
       - run: git config --global user.name "Dilum Aluthge"
       - run: git config --global user.email "dilum@aluthge.com"
       - uses: julia-actions/julia-buildpkg@v1
@@ -68,7 +68,7 @@ jobs:
       - uses: julia-actions/setup-julia@v2
         with:
           version: '1'
-      - uses: julia-actions/cache@v2
+      - uses: julia-actions/cache@v3
       - run: |
           julia --project=docs --color=yes -e '
             using Pkg
