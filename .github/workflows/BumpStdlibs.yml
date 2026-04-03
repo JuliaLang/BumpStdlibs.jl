@@ -29,7 +29,7 @@ jobs:
     steps:
       - uses: actions/checkout@v6
       - uses: julia-actions/setup-julia@v2
-      - uses: julia-actions/cache@v2
+      - uses: julia-actions/cache@v3
       - run: echo "BUMPSTDLIBS_STDLIBS_TO_INCLUDE is ${{ github.event.inputs.BUMPSTDLIBS_STDLIBS_TO_INCLUDE }}"
       - run: git config --global user.name "${{ github.actor }}"
       - run: git config --global user.email "${{ github.actor_id }}+${{ github.actor }}@users.noreply.github.com>"
