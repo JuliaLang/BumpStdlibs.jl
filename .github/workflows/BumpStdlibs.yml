@@ -22,6 +22,9 @@ on:
         required: true
         default: false
 
+permissions:
+  contents: read
+
 jobs:
   BumpStdlibs:
     if: github.event_name == 'workflow_dispatch'
