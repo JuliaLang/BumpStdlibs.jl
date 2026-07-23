@@ -30,7 +30,7 @@ jobs:
     if: github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - uses: julia-actions/setup-julia@v3
       - uses: julia-actions/cache@v3
       - run: echo "BUMPSTDLIBS_STDLIBS_TO_INCLUDE is ${{ github.event.inputs.BUMPSTDLIBS_STDLIBS_TO_INCLUDE }}"
