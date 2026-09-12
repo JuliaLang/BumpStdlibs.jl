@@ -2,38 +2,19 @@ function current_branch()
     return chomp(read(`git rev-parse --abbrev-ref HEAD`, String))
 end
 
-function get_age_of_commit(commit)
-    commit_date_string = strip(read(`git show -s --format=%cI $(commit)`, String))
-    commit_date = TimeZones.ZonedDateTime(commit_date_string, "yyyy-mm-ddTHH:MM:SSzzzz")
-    now = TimeZones.ZonedDateTime(TimeZones.now(), TimeZones.localzone())
-    age = max(now - commit_date, Dates.Millisecond(0))
-    return age
-end
-
-function get_origin_branches()
-    run(`git fetch --all --prune`)
-    x1 = read(`git branch -a`, String)
-    x2 = strip.(strip.(strip.(split(strip(x1), '\n')), '*'))
-    origin_branches = String[]
-    for x3 in x2
-        x4 = x3 * " "
-        m = match(r"^remotes\/origin\/([\w\_\-\\\/]*?) ", x4)
-        if !(m isa Nothing)
-            x5 = strip(m[1])
-            if x5 != "HEAD"
-                push!(origin_branches, x5)
-            end
-        end
+# The branches of a repository and their tips, from `git ls-remote`: works on a URL or a
+# remote name, and does not need the objects fetched.
+function ls_remote_heads(remote::AbstractString)
+    heads = Dict{String, String}()
+    for line in eachline(`git ls-remote --heads $(remote)`)
+        m = match(r"^([0-9a-f]+)\s+refs/heads/(.+)$", strip(line))
+        m === nothing && continue
+        heads[String(m[2])] = String(m[1])
     end
-    unique!(origin_branches)
-    sort!(origin_branches)
-    return origin_branches
+    return heads
 end
 
-function delete_branch_on_origin(branch_name)
-    run(`git push origin --delete $(branch_name)`)
-    return nothing
-end
+get_origin_branches() = sort!(collect(keys(ls_remote_heads("origin"))))
 
 function parse_branch_name(original_str::AbstractString)
     str = strip(original_str)
@@ -77,31 +58,20 @@ function generate_predicate_branch_matches_stdlib_and_target_branch(; stdlib, ta
     return predicate
 end
 
-function find_branches_to_delete(predicate::Function, older_than::Dates.AbstractTime; exclude = String[])
+# `heads` maps branch names to their tips, `age_of` gives the age of a commit by sha.
+function find_branches_to_delete(predicate::Function, older_than::Dates.AbstractTime,
+                                 heads::AbstractDict{String, String}, age_of::Function;
+                                 exclude = String[])
     branches_to_delete = String[]
-    for branch_name in get_origin_branches()
+    for branch_name in sort!(collect(keys(heads)))
         if predicate(branch_name) && !(branch_name in exclude)
-            commit = strip(read(`git rev-parse origin/$(branch_name)`, String))
-            age = get_age_of_commit(commit)
+            age = max(age_of(heads[branch_name]), Dates.Millisecond(0))
             if age >= older_than
                 push!(branches_to_delete, branch_name)
             end
         end
     end
     return branches_to_delete
-end
-
-function delete_branches(branches::Vector{String})
-    for branch_name in branches
-        @info "Attempting to delete branch" branch_name
-        try
-            delete_branch_on_origin(branch_name)
-            @info "Successfully deleted branch" branch_name
-        catch ex
-            @info "Encountered an error while trying to delete branch" exception=(ex, catch_backtrace()) branch_name
-        end
-    end
-    return nothing
 end
 
 function git_diff_is_empty(x::AbstractString, y::AbstractString)
