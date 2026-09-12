@@ -150,7 +150,7 @@ end
 # When the commit was made, in UTC.
 function commit_date(repo::GitHub.Repo, sha::AbstractString; auth)
     commit = github_api("GET", "/repos/$(repo.full_name)/commits/$(sha)"; auth)
-    return Dates.DateTime(replace(String(commit.commit.committer.date), "Z" => ""))
+    return Dates.DateTime(chopsuffix(String(commit.commit.committer.date), "Z"))
 end
 
 function delete_fork_branches(fork::GitHub.Repo, branches::Vector{String}; auth)
