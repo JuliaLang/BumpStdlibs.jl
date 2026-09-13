@@ -3,9 +3,11 @@ function get_stdlib_list(upstream::GitHub.Repo, branch_name::AbstractString; aut
         return cd(temp_dir) do
             list = Vector{StdlibInfo}(undef, 0)
             upstream_clone_url = "https://github.com/$(upstream.full_name).git"
-            run(`git clone $(upstream_clone_url) UPSTREAM`)
+            # only the `stdlib/*.version` files are needed, so fetch as little as possible
+            run(`git clone --quiet --depth 1 --filter=blob:none --sparse --branch $(branch_name) $(upstream_clone_url) UPSTREAM`)
             return cd("UPSTREAM") do
-                run(`git checkout $(branch_name)`)
+                run(`git sparse-checkout set stdlib`)
+                assert_current_branch_is(branch_name)
                 my_regex_2 = r"^([\w]*?)_GIT_URL[\s]*?:=[\s]*?([^\n\r]*)$"
                 my_regex_3 = r"^([\w]*?)\.version$"
                 my_regex_4 = r"^([\w]*?)_BRANCH[\s]*?=[\s]*?([\w\-\.]*?)$"

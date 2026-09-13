@@ -21,6 +21,11 @@ on:
         type: boolean
         required: true
         default: false
+      BUMPSTDLIBS_DRY_RUN:
+        description: 'Do everything except syncing the fork, pushing and opening pull requests. Default: no'
+        type: boolean
+        required: true
+        default: false
 
 permissions:
   contents: read
@@ -40,6 +45,7 @@ jobs:
       - run: julia --color=yes --project -e 'using BumpStdlibs; bump_stdlibs("JuliaLang/julia")'
         env:
           BUMPSTDLIBS_CLOSE_OLD_PULL_REQUESTS: ${{ github.event.inputs.BUMPSTDLIBS_CLOSE_OLD_PULL_REQUESTS }}
+          BUMPSTDLIBS_DRY_RUN: ${{ github.event.inputs.BUMPSTDLIBS_DRY_RUN }}
           BUMPSTDLIBS_PUSH_IF_NO_CHANGES: ${{ github.event.inputs.BUMPSTDLIBS_PUSH_IF_NO_CHANGES }}
           BUMPSTDLIBS_SENDER: ${{ github.event.sender.login }}
           BUMPSTDLIBS_STDLIBS_TO_INCLUDE: ${{ github.event.inputs.BUMPSTDLIBS_STDLIBS_TO_INCLUDE }}

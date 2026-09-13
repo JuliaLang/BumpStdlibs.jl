@@ -25,7 +25,11 @@ function bump_stdlibs(julia_repo::AbstractString, config::Config)
     fork_julia_repo_name = upstream_julia_repo_name
     fork_julia_repo = "$(fork_julia_repo_owner)/$(fork_julia_repo_name)"
     fork_julia_repo_gh = create_or_get_fork(fork_julia_repo, upstream_julia_repo_gh; auth = config.auth)
-    update_fork_branch(fork_julia_repo_gh, upstream_julia_repo_gh, config.julia_repo_target_branch; auth = config.auth)
+    if config.dry_run
+        @info "Dry run: not syncing the fork's branch with upstream" config.julia_repo_target_branch
+    else
+        update_fork_branch(fork_julia_repo_gh, upstream_julia_repo_gh, config.julia_repo_target_branch; auth = config.auth)
+    end
     stdlib_list = get_stdlib_list(upstream_julia_repo_gh, config.julia_repo_target_branch; auth = config.auth)
     @info "Identified $(length(stdlib_list)) stdlibs that live in external repositories"
     for (i, stdlib) in enumerate(stdlib_list)
@@ -44,37 +48,33 @@ function bump_stdlibs(julia_repo::AbstractString, config::Config)
     )
     branches_to_delete = String[]
     if config.close_old_pull_requests
-        mktempdir() do temp_dir
-            cd(temp_dir) do
-                fork_clone_url = "https://x-access-token:$(config.auth.token)@github.com/$(fork_julia_repo_gh.full_name).git"
-                run(`git clone $(fork_clone_url) FORK`)
-                cd("FORK") do
-                    run(`git fetch --all --prune`)
-                    for stdlib in filtered_stdlib_list
-                        predicate = generate_predicate_branch_matches_stdlib_and_target_branch(;
-                            stdlib = stdlib.name,
-                            target_branch = config.julia_repo_target_branch,
-                        )
-                        old_branches = find_branches_to_delete(
-                            predicate,
-                            config.close_old_pull_requests_older_than,
-                        )
-                        if !isempty(old_branches)
-                            append!(branches_to_delete, old_branches)
-                            pr_numbers = find_prs_for_branches(
-                                upstream_julia_repo_gh,
-                                whoami,
-                                old_branches;
-                                auth = config.auth,
-                            )
-                            if !isempty(pr_numbers)
-                                state.closed_pr_numbers[stdlib.name] = pr_numbers
-                            end
-                        end
-                    end
-                end # cd("FORK")
-            end # cd(temp_dir)
-        end # mktempdir()
+        fork_clone_url = "https://x-access-token:$(config.auth.token)@github.com/$(fork_julia_repo_gh.full_name).git"
+        fork_heads = ls_remote_heads(fork_clone_url)
+        age_of = sha -> Dates.now(Dates.UTC) - commit_date(fork_julia_repo_gh, sha; auth = config.auth)
+        for stdlib in filtered_stdlib_list
+            predicate = generate_predicate_branch_matches_stdlib_and_target_branch(;
+                stdlib = stdlib.name,
+                target_branch = config.julia_repo_target_branch,
+            )
+            old_branches = find_branches_to_delete(
+                predicate,
+                config.close_old_pull_requests_older_than,
+                fork_heads,
+                age_of,
+            )
+            if !isempty(old_branches)
+                append!(branches_to_delete, old_branches)
+                pr_numbers = find_prs_for_branches(
+                    upstream_julia_repo_gh,
+                    whoami,
+                    old_branches;
+                    auth = config.auth,
+                )
+                if !isempty(pr_numbers)
+                    state.closed_pr_numbers[stdlib.name] = pr_numbers
+                end
+            end
+        end
     end
     for (i, stdlib) in enumerate(filtered_stdlib_list)
         @info "Starting to work on" i stdlib length(filtered_stdlib_list)
@@ -89,16 +89,11 @@ function bump_stdlibs(julia_repo::AbstractString, config::Config)
     if config.close_old_pull_requests && !isempty(branches_to_delete)
         branches_to_actually_delete = filter(b -> !(b in state.all_pr_branches), branches_to_delete)
         if !isempty(branches_to_actually_delete)
-            mktempdir() do temp_dir
-                cd(temp_dir) do
-                    fork_clone_url = "https://x-access-token:$(config.auth.token)@github.com/$(state.fork_julia_repo_gh.full_name).git"
-                    run(`git clone $(fork_clone_url) FORK`)
-                    cd("FORK") do
-                        run(`git fetch --all --prune`)
-                        delete_branches(branches_to_actually_delete)
-                    end # cd("FORK")
-                end # cd(temp_dir)
-            end # mktempdir()
+            if config.dry_run
+                @info "Dry run: not deleting branches" branches_to_actually_delete
+            else
+                delete_fork_branches(state.fork_julia_repo_gh, branches_to_actually_delete; auth = config.auth)
+            end
         end
     end
     if !isempty(errors)
@@ -116,12 +111,13 @@ function _bump_single_stdlib(stdlib::StdlibInfo, config::Config, state::State)
     mktempdir() do temp_dir
         cd(temp_dir) do
             fork_clone_url = "https://x-access-token:$(auth.token)@github.com/$(fork_julia_repo_gh.full_name).git"
-            run(`git clone $(fork_clone_url) FORK`)
+            # the tip of the target branch is all the bump commit needs
+            run(`git clone --quiet --depth 1 --single-branch --branch $(config.julia_repo_target_branch) $(fork_clone_url) FORK`)
             cd("FORK") do # we do this just to double-check that the `FORK` directory was created
             end
-            run(`git clone $(stdlib.git_url) STDLIB`)
+            # the history is needed for the changelog, the files are not
+            run(`git clone --quiet --filter=blob:none --no-checkout --branch $(stdlib.branch) $(stdlib.git_url) STDLIB`)
             cd("STDLIB") do
-                run(`git checkout $(stdlib.branch)`)
                 assert_current_branch_is(stdlib.branch)
                 stdlib_latest_commit = strip(read(`git rev-parse HEAD`, String))
                 stdlib_latest_commit_short = strip(read(`git rev-parse --short $(stdlib_latest_commit)`, String))
@@ -129,9 +125,13 @@ function _bump_single_stdlib(stdlib::StdlibInfo, config::Config, state::State)
                 stdlib_current_commit_in_upstream = stdlib.current_shas["sha1"]
                 stdlib_current_commit_in_upstream_short = strip(read(`git rev-parse --short $(stdlib_current_commit_in_upstream)`, String))
                 assert_string_startswith(stdlib_current_commit_in_upstream, stdlib_current_commit_in_upstream_short)
-                run(`git fetch --all --prune`)
-                stdlib_version = if isfile("Project.toml")
-                    proj = TOML.parsefile("Project.toml")
+                project_toml = try
+                    read(`git show HEAD:Project.toml`, String)
+                catch
+                    nothing
+                end
+                stdlib_version = if project_toml !== nothing
+                    proj = TOML.parse(project_toml)
                     if haskey(proj, "version")
                         VersionNumber(proj["version"])
                     else
@@ -261,9 +261,9 @@ function _bump_single_stdlib(stdlib::StdlibInfo, config::Config, state::State)
                                 end
                             end
                         end
-                        cd("stdlib") do
-                            run(`make`)
-                        end
+                        # fetch the new tarball and let `jlchecksum` record its checksums; the default target
+                        # would download and unpack every external stdlib
+                        run(`make -C stdlib extract-$(stdlib.name)`)
                         file_to_target = Dict(
                             "suitesparse" => "libsuitesparse",
                         )
@@ -280,12 +280,20 @@ function _bump_single_stdlib(stdlib::StdlibInfo, config::Config, state::State)
                         do_push = true
                         if !(config.push_if_no_changes)
                             if pr_branch in get_origin_branches()
-                                if git_diff_is_empty("HEAD", "origin/$(pr_branch)")
+                                run(`git fetch --quiet --depth 1 origin $(pr_branch)`)
+                                if git_diff_is_empty("HEAD", "FETCH_HEAD")
                                     do_push = false
                                 end
                             end
                         end
                         @info "" do_push
+                        if config.dry_run
+                            @info "Dry run: not pushing and not opening a pull request" pr_branch pr_title pr_body
+                            @info "Dry run: the bump commit" changes = read(`git show --stat --format=%s HEAD`, String)
+                            dump = get(ENV, "BUMPSTDLIBS_DRY_RUN_PATCH", "")
+                            isempty(dump) || write(dump, read(`git format-patch --stdout "HEAD~1"`, String))
+                            return nothing
+                        end
                         if do_push
                             run(`git push --force origin $(pr_branch)`)
                         end

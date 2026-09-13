@@ -31,6 +31,8 @@ Base.@kwdef struct Config
     pr_branch_suffix::String = ""
     push_if_no_changes::Bool = get_input_from_environment(:push_if_no_changes)
     stdlibs_to_include::Union{String, Vector{String}} = force_string(get_input_from_environment(:stdlibs_to_include))
+    # do everything except touching the fork and the pull requests
+    dry_run::Bool = parse(Bool, get(ENV, "BUMPSTDLIBS_DRY_RUN", "false"))
 end
 
 Base.@kwdef struct State
